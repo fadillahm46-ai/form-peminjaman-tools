@@ -223,7 +223,6 @@
                         Masuk Dashboard
                     </button>
                 </div>
-                <p class="text-[11px] text-slate-400">Password bawaan: <code class="font-mono text-slate-600 font-semibold">admin123</code></p>
             </div>
 
             <!-- Panel Dashboard Admin (Setelah Berhasil Login) -->
@@ -234,11 +233,11 @@
                         <p class="text-xs text-slate-500 mt-1">Klik badge status <span class="text-indigo-600 font-semibold">DIPINJAM</span> atau <span class="text-emerald-600 font-semibold">DONE</span> untuk melihat detail foto peminjaman & pengembalian.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="muatDataAdmin()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                            Refresh
+                        <button id="btnAdminRefresh" onclick="muatDataAdmin(true)" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
+                            <svg id="adminRefreshIcon" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            <span id="adminRefreshText">Refresh</span>
                         </button>
-                        <button onclick="logoutAdmin()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-all">
+                        <button onclick="logoutAdmin()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-all cursor-pointer">
                             Keluar
                         </button>
                     </div>
@@ -349,7 +348,7 @@
                         <h3 class="text-base font-bold text-slate-900" id="modalDetailTitle">Detail Transaksi Peminjaman</h3>
                         <p class="text-xs font-mono text-indigo-600 font-semibold" id="modalDetailId">-</p>
                     </div>
-                    <button onclick="closePhotoModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <button onclick="closePhotoModal()" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -361,11 +360,16 @@
                             <span class="text-xs font-bold text-slate-800">Saat Dipinjam</span>
                             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Foto Pinjam</span>
                         </div>
-                        <div class="h-44 bg-slate-200/60 rounded-lg overflow-hidden flex items-center justify-center mb-2">
-                            <img id="modalFotoPinjam" src="" alt="Foto Pinjam" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\'text-xs text-slate-400\'>Tidak ada foto</div>'">
+                        <div class="h-48 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center mb-2 relative border border-slate-200/80">
+                            <img id="modalFotoPinjam" alt="Foto Pinjam" class="w-full h-full object-contain hidden">
+                            <div id="modalFallbackPinjam" class="text-xs text-slate-400 p-4 text-center flex flex-col items-center justify-center">
+                                <svg class="w-8 h-8 text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <span id="modalFallbackPinjamTxt">Tidak ada foto</span>
+                            </div>
                         </div>
-                        <div class="text-[11px] text-slate-500 mt-auto">
-                            <span class="font-semibold text-slate-700">Waktu Pinjam:</span> <span id="modalTglPinjam">-</span>
+                        <div class="flex items-center justify-between text-[11px] text-slate-500 mt-auto pt-1">
+                            <div><span class="font-semibold text-slate-700">Waktu:</span> <span id="modalTglPinjam">-</span></div>
+                            <a id="modalLinkPinjam" href="#" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:text-indigo-800 font-semibold hidden">Buka Foto ↗</a>
                         </div>
                     </div>
 
@@ -375,22 +379,28 @@
                             <span class="text-xs font-bold text-slate-800">Saat Dikembalikan</span>
                             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Foto Kembali</span>
                         </div>
-                        <div class="h-44 bg-slate-200/60 rounded-lg overflow-hidden flex items-center justify-center mb-2">
-                            <img id="modalFotoKembali" src="" alt="Foto Kembali" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\'text-xs text-slate-400\'>Belum dikembalikan / Tanpa foto</div>'">
+                        <div class="h-48 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center mb-2 relative border border-slate-200/80">
+                            <img id="modalFotoKembali" alt="Foto Kembali" class="w-full h-full object-contain hidden">
+                            <div id="modalFallbackKembali" class="text-xs text-slate-400 p-4 text-center flex flex-col items-center justify-center">
+                                <svg class="w-8 h-8 text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <span id="modalFallbackKembaliTxt">Belum dikembalikan</span>
+                            </div>
                         </div>
-                        <div class="text-[11px] text-slate-500 mt-auto">
-                            <span class="font-semibold text-slate-700">Waktu Kembali:</span> <span id="modalTglKembali">-</span>
+                        <div class="flex items-center justify-between text-[11px] text-slate-500 mt-auto pt-1">
+                            <div><span class="font-semibold text-slate-700">Waktu:</span> <span id="modalTglKembali">-</span></div>
+                            <a id="modalLinkKembali" href="#" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:text-emerald-800 font-semibold hidden">Buka Foto ↗</a>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5 text-xs text-slate-600 space-y-1">
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5 text-xs text-slate-600 space-y-1.5">
                     <div><span class="font-semibold text-slate-800">Barang / Tools:</span> <span id="modalKeterangan">-</span></div>
                     <div><span class="font-semibold text-slate-800">Peminjam:</span> <span id="modalPeminjam">-</span></div>
+                    <div><span class="font-semibold text-slate-800">Departemen / Section:</span> <span id="modalDeptSec">-</span></div>
                 </div>
 
                 <div class="text-right">
-                    <button onclick="closePhotoModal()" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all">
+                    <button onclick="closePhotoModal()" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer">
                         Tutup
                     </button>
                 </div>
@@ -596,11 +606,22 @@
         }
 
         // Helper untuk link Google Drive agar langsung tampil di tag <img>
-        function formatDriveImgUrl(url, size = "w600") {
+        function formatDriveImgUrl(url, size = "w800") {
             if (!url) return "";
+            if (url.startsWith("data:image/")) return url;
             const match = String(url).match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
             if (match && match[1]) {
-                return "https://drive.google.com/thumbnail?id=" + match[1] + "&sz=" + size;
+                return "https://lh3.googleusercontent.com/d/" + match[1];
+            }
+            return url;
+        }
+
+        function getDriveDirectViewUrl(url) {
+            if (!url) return "#";
+            if (url.startsWith("data:image/")) return url;
+            const match = String(url).match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
+            if (match && match[1]) {
+                return "https://drive.google.com/file/d/" + match[1] + "/view?usp=sharing";
             }
             return url;
         }
@@ -871,6 +892,8 @@
         }
 
         // ================= HISTORI =================
+        let currentFilteredHistoriData = [];
+
         function cariHistori() {
             const keyword = document.getElementById('h_nrp_search').value.trim();
             if(!keyword) {
@@ -893,6 +916,7 @@
         }
 
         function renderHistori(data) {
+            currentFilteredHistoriData = data || [];
             const container = document.getElementById('h_results');
             container.innerHTML = '';
 
@@ -901,7 +925,7 @@
                 return;
             }
 
-            data.forEach(item => {
+            data.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = "bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4";
                 card.innerHTML = `
@@ -917,7 +941,7 @@
                             <span><strong class="text-slate-700">Kembali:</strong> ${item.tglKembali}</span>
                         </div>
                     </div>
-                    <button onclick="bukaModalFoto('${item.idTransaksi}', '${item.keterangan}', '${item.nama} (${item.nrp})', '${item.fotoPinjam}', '${item.tglPinjam}', '${item.fotoKembali}', '${item.tglKembali}')" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-all">
+                    <button onclick="bukaModalFotoHistoriByIndex(${index})" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-all cursor-pointer">
                         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         <span>Lihat Bukti Foto</span>
                     </button>
@@ -926,9 +950,15 @@
             });
         }
 
+        function bukaModalFotoHistoriByIndex(index) {
+            const item = currentFilteredHistoriData[index];
+            if (item) bukaModalFotoDetail(item);
+        }
+
         // ================= ADMIN DASHBOARD =================
         let globalAdminPassword = "";
         let adminDataCache = [];
+        let currentFilteredAdminData = [];
 
         function handleAdminLogin() {
             const pwd = document.getElementById('admin_password').value.trim();
@@ -937,13 +967,32 @@
                 return;
             }
             globalAdminPassword = pwd;
-            muatDataAdmin();
+            muatDataAdmin(false);
         }
 
-        function muatDataAdmin() {
-            showLoading("Memuat data administrator...");
+        function setAdminRefreshIndicator(isLoading) {
+            const icon = document.getElementById('adminRefreshIcon');
+            const txt = document.getElementById('adminRefreshText');
+            if (icon) {
+                if (isLoading) icon.classList.add('animate-spin');
+                else icon.classList.remove('animate-spin');
+            }
+            if (txt) {
+                txt.innerText = isLoading ? "Memperbarui..." : "Refresh";
+            }
+        }
+
+        function muatDataAdmin(isRefresh = false) {
+            if (isRefresh) {
+                // Saat refresh, gunakan indikator pada tombol tanpa menutup layar dengan loading overlay
+                setAdminRefreshIndicator(true);
+            } else {
+                showLoading("Memverifikasi & memuat data...");
+            }
+
             callBackend("getAllData", { password: globalAdminPassword }, function(res) {
                 hideLoading();
+                setAdminRefreshIndicator(false);
                 if(res && res.success) {
                     document.getElementById('admin-login').classList.add('hidden');
                     document.getElementById('admin-dashboard').classList.remove('hidden');
@@ -954,6 +1003,7 @@
                 }
             }, function(err) {
                 hideLoading();
+                setAdminRefreshIndicator(false);
                 showMsg("Error", err.message, true);
             });
         }
@@ -961,6 +1011,7 @@
         function logoutAdmin() {
             globalAdminPassword = "";
             adminDataCache = [];
+            currentFilteredAdminData = [];
             document.getElementById('admin_password').value = "";
             document.getElementById('admin-dashboard').classList.add('hidden');
             document.getElementById('admin-login').classList.remove('hidden');
@@ -984,6 +1035,7 @@
         }
 
         function renderAdminTable(data) {
+            currentFilteredAdminData = data || [];
             const tbody = document.getElementById('admin_table_body');
             tbody.innerHTML = '';
 
@@ -992,7 +1044,7 @@
                 return;
             }
 
-            data.forEach(row => {
+            data.forEach((row, index) => {
                 const isDone = (row.status || "").toUpperCase() === 'DONE';
                 const badgeClass = isDone ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200';
                 
@@ -1015,7 +1067,7 @@
                         ${row.keterangan}
                     </td>
                     <td class="p-3.5 text-center">
-                        <button onclick="bukaModalFoto('${row.idTransaksi}', '${escapeHtml(row.keterangan)}', '${escapeHtml(row.nama)} (${row.nrp})', '${row.fotoPinjam}', '${row.tglPinjam || row.timestampPinjam}', '${row.fotoKembali}', '${row.tglKembali}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeClass} transition-all">
+                        <button type="button" onclick="bukaModalFotoByIndex(${index})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeClass} transition-all cursor-pointer shadow-2xs">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             <span>${row.status}</span>
                         </button>
@@ -1028,31 +1080,88 @@
             });
         }
 
-        function escapeHtml(str) {
-            return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        function bukaModalFotoByIndex(index) {
+            const item = currentFilteredAdminData[index];
+            if (item) bukaModalFotoDetail(item);
         }
 
         // ================= DETAIL POP-UP FOTO =================
-        function bukaModalFoto(idTrx, keterangan, peminjam, fotoPinjam, tglPinjam, fotoKembali, tglKembali) {
-            document.getElementById('modalDetailId').innerText = idTrx;
-            document.getElementById('modalKeterangan').innerText = keterangan;
-            document.getElementById('modalPeminjam').innerText = peminjam;
-            document.getElementById('modalTglPinjam').innerText = tglPinjam || '-';
-            document.getElementById('modalTglKembali').innerText = tglKembali || 'Belum dikembalikan';
+        function setPhotoDisplay(imgId, fallbackId, fallbackTxtId, linkId, rawUrl, defaultEmptyMsg) {
+            const imgEl = document.getElementById(imgId);
+            const fallbackEl = document.getElementById(fallbackId);
+            const fallbackTxt = document.getElementById(fallbackTxtId);
+            const linkEl = document.getElementById(linkId);
 
-            const imgPinjam = document.getElementById('modalFotoPinjam');
-            imgPinjam.src = formatDriveImgUrl(fotoPinjam, "w800");
-
-            const imgKembali = document.getElementById('modalFotoKembali');
-            if (fotoKembali && fotoKembali.trim() !== "" && fotoKembali !== "-") {
-                imgKembali.src = formatDriveImgUrl(fotoKembali, "w800");
-                imgKembali.classList.remove('hidden');
-            } else {
-                imgKembali.src = "";
-                imgKembali.classList.add('hidden');
+            if (!rawUrl || rawUrl.trim() === "" || rawUrl === "-") {
+                imgEl.src = "";
+                imgEl.classList.add('hidden');
+                fallbackEl.classList.remove('hidden');
+                if (fallbackTxt) fallbackTxt.innerText = defaultEmptyMsg;
+                if (linkEl) linkEl.classList.add('hidden');
+                return;
             }
 
+            const imgUrl = formatDriveImgUrl(rawUrl, "w800");
+            const viewUrl = getDriveDirectViewUrl(rawUrl);
+
+            if (linkEl) {
+                linkEl.href = viewUrl;
+                linkEl.classList.remove('hidden');
+            }
+
+            imgEl.onload = function() {
+                imgEl.classList.remove('hidden');
+                fallbackEl.classList.add('hidden');
+            };
+
+            imgEl.onerror = function() {
+                const match = String(rawUrl).match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
+                if (match && match[1] && !imgEl._hasRetried) {
+                    imgEl._hasRetried = true;
+                    imgEl.src = "https://drive.google.com/thumbnail?id=" + match[1] + "&sz=w800";
+                    return;
+                }
+                imgEl.classList.add('hidden');
+                fallbackEl.classList.remove('hidden');
+                if (fallbackTxt) fallbackTxt.innerText = "Foto gagal dimuat / Akses dibatasi";
+            };
+
+            imgEl._hasRetried = false;
+            imgEl.src = imgUrl;
+        }
+
+        function bukaModalFotoDetail(item) {
+            if (!item) return;
+            document.getElementById('modalDetailId').innerText = item.idTransaksi || '-';
+            document.getElementById('modalKeterangan').innerText = item.keterangan || '-';
+            document.getElementById('modalPeminjam').innerText = (item.nama || '-') + ' (' + (item.nrp || '-') + ')';
+            
+            const deptSecEl = document.getElementById('modalDeptSec');
+            if (deptSecEl) {
+                const infoDept = [item.departemen, item.section].filter(Boolean).join(' / ');
+                deptSecEl.innerText = infoDept + (item.perusahaan ? ' • ' + item.perusahaan : '');
+            }
+
+            document.getElementById('modalTglPinjam').innerText = item.tglPinjam || item.timestampPinjam || '-';
+            document.getElementById('modalTglKembali').innerText = item.tglKembali || 'Belum dikembalikan';
+
+            setPhotoDisplay('modalFotoPinjam', 'modalFallbackPinjam', 'modalFallbackPinjamTxt', 'modalLinkPinjam', item.fotoPinjam || item.fotoUrl, 'Tidak ada foto peminjaman');
+            setPhotoDisplay('modalFotoKembali', 'modalFallbackKembali', 'modalFallbackKembaliTxt', 'modalLinkKembali', item.fotoKembali, 'Barang belum dikembalikan');
+
             document.getElementById('photoDetailModal').classList.remove('hidden');
+        }
+
+        function bukaModalFoto(idTrx, keterangan, peminjam, fotoPinjam, tglPinjam, fotoKembali, tglKembali) {
+            bukaModalFotoDetail({
+                idTransaksi: idTrx,
+                keterangan: keterangan,
+                nama: peminjam,
+                nrp: '',
+                fotoPinjam: fotoPinjam,
+                tglPinjam: tglPinjam,
+                fotoKembali: fotoKembali,
+                tglKembali: tglKembali
+            });
         }
 
         function closePhotoModal() {
