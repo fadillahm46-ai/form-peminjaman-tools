@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peminjaman Tools SE</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.25s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loader {
+            border-top-color: #4F46E5;
+            animation: spinner 0.8s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Navbar Atas (Desktop & Tablet) -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Judul -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('peminjaman')">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-tight">Peminjaman Tools <span class="text-indigo-600">SE</span></h1>
+                        <p class="text-xs text-slate-500 hidden sm:block">Sistem Manajemen Inventaris & Peminjaman Barang</p>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation Tabs -->
+                <nav class="hidden md:flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200/60">
+                    <button id="nav-d-peminjaman" onclick="switchTab('peminjaman')" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 bg-white text-indigo-600 shadow-xs">
+                        Form Peminjaman
+                    </button>
+                    <button id="nav-d-pengembalian" onclick="switchTab('pengembalian')" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900">
+                        Pengembalian
+                    </button>
+                    <button id="nav-d-histori" onclick="switchTab('histori')" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900">
+                        Histori
+                    </button>
+                    <button id="nav-d-admin" onclick="switchTab('admin')" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900">
+                        Admin Dashboard
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Konten Utama (dengan bottom padding 28 di layar mobile agar tidak tertutup bottom bar) -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28 md:pb-12">
+
+        <!-- =================== VIEW: FORM PEMINJAMAN =================== -->
+        <div id="view-peminjaman" class="fade-in space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8">
+                <div class="border-b border-slate-100 pb-5 mb-6">
+                    <h2 class="text-xl font-bold text-slate-900">Form Peminjaman Barang / Tools</h2>
+                    <p class="text-sm text-slate-500 mt-1">Silakan isi formulir di bawah ini dengan lengkap dan unggah foto barang yang dipinjam.</p>
+                </div>
+
+                <form id="formPeminjaman" onsubmit="handlePeminjamanSubmit(event)" class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <!-- Nama Lengkap -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Nama Lengkap <span class="text-rose-500">*</span></label>
+                            <input type="text" id="p_nama" required placeholder="Contoh: Budi Santoso" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                        </div>
+
+                        <!-- NRP -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">NRP / ID Karyawan <span class="text-rose-500">*</span></label>
+                            <input type="text" id="p_nrp" required placeholder="Contoh: 12345" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                        </div>
+
+                        <!-- Perusahaan -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Perusahaan <span class="text-rose-500">*</span></label>
+                            <input type="text" id="p_perusahaan" required placeholder="Nama Perusahaan / Sub-kontraktor" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                        </div>
+
+                        <!-- Departemen -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Departemen <span class="text-rose-500">*</span></label>
+                            <input type="text" id="p_departemen" required placeholder="Contoh: Engineering / Maintenance" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                        </div>
+
+                        <!-- Section -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Section <span class="text-rose-500">*</span></label>
+                            <input type="text" id="p_section" required placeholder="Contoh: Tool Crib / Mechanical" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                        </div>
+
+                        <!-- Tanggal Peminjaman -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Tanggal Peminjaman <span class="text-rose-500">*</span></label>
+                            <input type="date" id="p_tanggal" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Keterangan / Nama Barang -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Keterangan / Nama Barang & Tools <span class="text-rose-500">*</span></label>
+                        <textarea id="p_keterangan" rows="3" required placeholder="Tuliskan nama barang, tipe, atau nomor seri tool yang dipinjam..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all"></textarea>
+                    </div>
+
+                    <!-- Foto Barang Saat Dipinjam -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Foto Barang Saat Dipinjam <span class="text-rose-500">*</span></label>
+                        <div class="mt-1 border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-indigo-400 transition-colors bg-slate-50/50 cursor-pointer relative" onclick="document.getElementById('p_foto').click()">
+                            <input type="file" id="p_foto" accept="image/*" capture="environment" class="hidden" onchange="previewUploadImage(this, 'previewPinjam', 'previewPinjamContainer')">
+                            
+                            <div id="previewPinjamContainer" class="hidden space-y-3">
+                                <img id="previewPinjam" src="#" alt="Preview Foto" class="max-h-60 mx-auto rounded-xl object-contain shadow-sm border border-slate-200">
+                                <p class="text-xs text-indigo-600 font-medium">Klik untuk mengganti foto</p>
+                            </div>
+
+                            <div id="placeholderPinjam" class="space-y-2">
+                                <div class="w-12 h-12 mx-auto rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                </div>
+                                <div class="text-sm font-semibold text-slate-700">Ambil Foto atau Pilih dari Galeri</div>
+                                <p class="text-xs text-slate-400">Format gambar otomatis dikompres agar proses upload cepat</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Submit -->
+                    <div class="pt-2">
+                        <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-100 transition-all active:scale-[0.99] flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span>Simpan Peminjaman</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: PENGEMBALIAN =================== -->
+        <div id="view-pengembalian" class="hidden fade-in space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Pengembalian Tools</h2>
+                        <p class="text-sm text-slate-500 mt-1">Daftar semua barang yang sedang dipinjam. Temukan barang Anda, lalu klik <b>Kembalikan Barang</b>.</p>
+                    </div>
+                    <button id="btnRefreshPinjaman" onclick="muatSemuaPinjaman(false)" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-100 transition-all text-xs">
+                        <svg id="iconRefreshPinjaman" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span id="txtRefreshPinjaman">Refresh Daftar</span>
+                    </button>
+                </div>
+
+                <!-- Live Search Filter (Cepat Tanpa Reload) -->
+                <div class="relative">
+                    <input type="text" id="k_filter_input" oninput="filterPinjamanLokal()" placeholder="Filter cepat: Ketik Nama, NRP, ID Transaksi, atau Nama Barang..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+            </div>
+
+            <!-- Grid Hasil Pinjaman Aktif -->
+            <div id="k_results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div id="k_empty_state" class="col-span-full py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200/80">
+                    Memuat daftar barang yang sedang dipinjam...
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: HISTORI =================== -->
+        <div id="view-histori" class="hidden fade-in space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Histori Peminjaman</h2>
+                    <p class="text-sm text-slate-500 mt-1">Cari riwayat peminjaman yang sudah selesai dikembalikan (Status DONE) menggunakan <b>NRP</b> atau <b>ID Transaksi</b>.</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <input type="text" id="h_nrp_search" placeholder="Masukkan NRP atau ID Transaksi (Contoh: 12345 / TRX-...)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all" onkeypress="if(event.key === 'Enter') cariHistori()">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <button onclick="cariHistori()" class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold text-sm transition-all">
+                        Cari Histori
+                    </button>
+                </div>
+            </div>
+
+            <!-- Daftar Histori -->
+            <div id="h_results" class="space-y-4">
+                <div id="h_empty_state" class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200/80">
+                    Silakan masukkan NRP atau ID Transaksi untuk menampilkan riwayat pengembalian.
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: ADMIN DASHBOARD =================== -->
+        <div id="view-admin" class="hidden fade-in space-y-6">
+            <!-- Login Admin -->
+            <div id="admin-login" class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8 space-y-5 text-center my-8">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Akses Administrator</h3>
+                    <p class="text-xs text-slate-500 mt-1">Masukkan kata sandi admin untuk melihat seluruh transaksi inventaris.</p>
+                </div>
+                <div class="space-y-3">
+                    <input type="password" id="admin_password" placeholder="Masukkan Password Admin" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-center tracking-widest transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
+                    <button onclick="handleAdminLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-100 transition-all">
+                        Masuk Dashboard
+                    </button>
+                </div>
+                <p class="text-[11px] text-slate-400">Password bawaan: <code class="font-mono text-slate-600 font-semibold">admin123</code></p>
+            </div>
+
+            <!-- Panel Dashboard Admin (Setelah Berhasil Login) -->
+            <div id="admin-dashboard" class="hidden space-y-5">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Rekap Transaksi Tools & Barang</h2>
+                        <p class="text-xs text-slate-500 mt-1">Klik badge status <span class="text-indigo-600 font-semibold">DIPINJAM</span> atau <span class="text-emerald-600 font-semibold">DONE</span> untuk melihat detail foto peminjaman & pengembalian.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="muatDataAdmin()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Refresh
+                        </button>
+                        <button onclick="logoutAdmin()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-all">
+                            Keluar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pencarian Lokal Tabel Admin -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4">
+                    <input type="text" id="admin_filter_input" oninput="filterAdminTable()" placeholder="Cari di tabel: Nama, NRP, Perusahaan, atau Nama Barang..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-xs transition-all">
+                </div>
+
+                <!-- Tabel Data Transaksi -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-semibold">
+                                    <th class="p-3.5">ID & Waktu</th>
+                                    <th class="p-3.5">Peminjam</th>
+                                    <th class="p-3.5">Dept / Sec</th>
+                                    <th class="p-3.5">Nama Tools / Barang</th>
+                                    <th class="p-3.5 text-center">Status (Klik Foto)</th>
+                                    <th class="p-3.5">Waktu Kembali</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin_table_body" class="divide-y divide-slate-100 text-slate-700">
+                                <tr>
+                                    <td colspan="6" class="p-8 text-center text-slate-400">Memuat data transaksi...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- =================== MOBILE BOTTOM NAVIGATION =================== -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-2 flex items-center justify-around shadow-lg">
+        <button id="nav-m-peminjaman" onclick="switchTab('peminjaman')" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-indigo-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            <span class="text-[10px] font-semibold mt-1">Pinjam</span>
+        </button>
+        <button id="nav-m-pengembalian" onclick="switchTab('pengembalian')" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-slate-500 hover:text-slate-900">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+            <span class="text-[10px] font-semibold mt-1">Kembali</span>
+        </button>
+        <button id="nav-m-histori" onclick="switchTab('histori')" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-slate-500 hover:text-slate-900">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[10px] font-semibold mt-1">Histori</span>
+        </button>
+        <button id="nav-m-admin" onclick="switchTab('admin')" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-slate-500 hover:text-slate-900">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span class="text-[10px] font-semibold mt-1">Admin</span>
+        </button>
+    </nav>
+
+    <!-- =================== MODAL: FORM PENGEMBALIAN =================== -->
+    <div id="kembaliModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onclick="closeKembaliModal()"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 max-w-md w-full p-6 space-y-5 relative z-10 fade-in">
+                <input type="hidden" id="kembali_row_id">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 class="text-base font-bold text-slate-900">Konfirmasi Pengembalian</h3>
+                    <button onclick="closeKembaliModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <p class="text-xs text-slate-500">Ambil atau unggah foto barang yang telah dikembalikan sebagai bukti fisik sebelum menyelesaikan status peminjaman.</p>
+
+                <!-- Area Unggah Foto Pengembalian -->
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-5 text-center hover:border-indigo-400 transition-colors bg-slate-50/50 cursor-pointer" onclick="document.getElementById('k_foto').click()">
+                    <input type="file" id="k_foto" accept="image/*" capture="environment" class="hidden" onchange="previewUploadImage(this, 'previewKembali', 'previewKembaliContainer')">
+                    
+                    <div id="previewKembaliContainer" class="hidden space-y-2">
+                        <img id="previewKembali" src="#" alt="Preview" class="max-h-48 mx-auto rounded-lg object-contain border border-slate-200 shadow-xs">
+                        <p class="text-xs text-indigo-600 font-medium">Klik untuk mengganti foto</p>
+                    </div>
+
+                    <div id="placeholderKembali" class="space-y-1.5">
+                        <svg class="w-8 h-8 mx-auto text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <div class="text-xs font-semibold text-slate-700">Ambil Foto Fisik Barang Kembali</div>
+                        <p class="text-[11px] text-slate-400">Wajib dilampirkan</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button onclick="closeKembaliModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-all">
+                        Batal
+                    </button>
+                    <button onclick="prosesKembalikan()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-100 transition-all">
+                        Simpan & Kembalikan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== MODAL: DETAIL POP-UP FOTO (PINJAM & KEMBALI) =================== -->
+    <div id="photoDetailModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onclick="closePhotoModal()"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 max-w-2xl w-full p-6 space-y-5 relative z-10 fade-in max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900" id="modalDetailTitle">Detail Transaksi Peminjaman</h3>
+                        <p class="text-xs font-mono text-indigo-600 font-semibold" id="modalDetailId">-</p>
+                    </div>
+                    <button onclick="closePhotoModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Foto Pinjam -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-800">Saat Dipinjam</span>
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Foto Pinjam</span>
+                        </div>
+                        <div class="h-44 bg-slate-200/60 rounded-lg overflow-hidden flex items-center justify-center mb-2">
+                            <img id="modalFotoPinjam" src="" alt="Foto Pinjam" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\'text-xs text-slate-400\'>Tidak ada foto</div>'">
+                        </div>
+                        <div class="text-[11px] text-slate-500 mt-auto">
+                            <span class="font-semibold text-slate-700">Waktu Pinjam:</span> <span id="modalTglPinjam">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Foto Kembali -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-800">Saat Dikembalikan</span>
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Foto Kembali</span>
+                        </div>
+                        <div class="h-44 bg-slate-200/60 rounded-lg overflow-hidden flex items-center justify-center mb-2">
+                            <img id="modalFotoKembali" src="" alt="Foto Kembali" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\'text-xs text-slate-400\'>Belum dikembalikan / Tanpa foto</div>'">
+                        </div>
+                        <div class="text-[11px] text-slate-500 mt-auto">
+                            <span class="font-semibold text-slate-700">Waktu Kembali:</span> <span id="modalTglKembali">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5 text-xs text-slate-600 space-y-1">
+                    <div><span class="font-semibold text-slate-800">Barang / Tools:</span> <span id="modalKeterangan">-</span></div>
+                    <div><span class="font-semibold text-slate-800">Peminjam:</span> <span id="modalPeminjam">-</span></div>
+                </div>
+
+                <div class="text-right">
+                    <button onclick="closePhotoModal()" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== MODAL GLOBAL PESAN (ALERT) =================== -->
+    <div id="msgModal" class="fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onclick="closeMsgModal()"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 max-w-sm w-full p-6 text-center space-y-4 relative z-10 fade-in">
+                <div id="msgIconContainer" class="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center"></div>
+                <div>
+                    <h3 id="msgTitle" class="text-base font-bold text-slate-900">Notifikasi</h3>
+                    <p id="msgBody" class="text-xs text-slate-500 mt-1 leading-relaxed"></p>
+                </div>
+                <button onclick="closeMsgModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay Global -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-xs z-[70] hidden flex-col items-center justify-center">
+        <div class="loader border-4 border-slate-200 rounded-full w-10 h-10 mb-3"></div>
+        <p class="text-indigo-600 font-semibold text-sm" id="loadingText">Memproses data...</p>
+    </div>
+
+    <!-- =================== JAVASCRIPT LOGIC =================== -->
+    <script>
+        /**
+         * KONFIGURASI INTEGRASI GOOGLE APPS SCRIPT & SPREADSHEET
+         */
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwm6sHhmhQWzh5qRCd8kfEpnS0B2UkCYwSS9_kUTPbjyBjJI0DgBvQutmzXYBTdhngiNQ/exec";
+        const SCRIPT_ID = "1VgM6xzu3g0awATCfE11YhlYTkOWo4BxjD-7nxV-DrL6AQ-u4lvu1uMSn";
+        const SPREADSHEET_ID = "1OK7KVPXkcRtNcyvrjT7HB6Xy6fABnWDok0YDTL-6lsg";
+
+        // ================= MOCK FALLBACK (OFFLINE / PREVIEW) =================
+        if (typeof google === 'undefined' && (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.trim() === "")) {
+            window.simDB = [
+                {
+                    rowNumber: 2,
+                    idTransaksi: "TRX-20261024-001",
+                    nama: "Budi Santoso",
+                    nrp: "12345",
+                    perusahaan: "PT Sejahtera Enjiniring",
+                    departemen: "Engineering",
+                    section: "Maintenance",
+                    tglPeminjaman: "24/10/2026",
+                    tglPinjam: "24/10/2026 08:30",
+                    keterangan: "Bor Listrik Bosch 13mm",
+                    fotoUrl: "https://placehold.co/600x400/e0e7ff/4338ca?text=Foto+Pinjam+Bor",
+                    fotoPinjam: "https://placehold.co/600x400/e0e7ff/4338ca?text=Foto+Pinjam+Bor",
+                    status: "DIPINJAM",
+                    tglKembali: "-",
+                    fotoKembali: ""
+                },
+                {
+                    rowNumber: 3,
+                    idTransaksi: "TRX-20261023-002",
+                    nama: "Ahmad Riyadi",
+                    nrp: "12345",
+                    perusahaan: "PT Sejahtera Enjiniring",
+                    departemen: "Production",
+                    section: "Assembly",
+                    tglPeminjaman: "23/10/2026",
+                    tglPinjam: "23/10/2026 09:15",
+                    keterangan: "Kunci Torsi Digital 20-100 Nm",
+                    fotoUrl: "https://placehold.co/600x400/e0e7ff/4338ca?text=Foto+Pinjam+Kunci",
+                    fotoPinjam: "https://placehold.co/600x400/e0e7ff/4338ca?text=Foto+Pinjam+Kunci",
+                    status: "DONE",
+                    tglKembali: "23/10/2026 16:45",
+                    fotoKembali: "https://placehold.co/600x400/dcfce7/15803d?text=Foto+Kembali+Kunci"
+                }
+            ];
+
+            window.google = {
+                script: {
+                    run: {
+                        withSuccessHandler: function(cb) { const inst = Object.create(this); inst._ok = cb; return inst; },
+                        withFailureHandler: function(cb) { this._fail = cb; return this; },
+                        submitPeminjaman: function(data) {
+                            const self = this;
+                            setTimeout(() => {
+                                const newId = "TRX-" + Date.now().toString().slice(-6);
+                                window.simDB.unshift({
+                                    rowNumber: window.simDB.length + 2,
+                                    idTransaksi: newId,
+                                    nama: data.nama,
+                                    nrp: data.nrp,
+                                    perusahaan: data.perusahaan,
+                                    departemen: data.departemen,
+                                    section: data.section,
+                                    tglPeminjaman: data.tglPeminjaman,
+                                    tglPinjam: data.tglPeminjaman,
+                                    keterangan: data.keterangan,
+                                    fotoUrl: data.fotoPinjam,
+                                    fotoPinjam: data.fotoPinjam,
+                                    status: "DIPINJAM",
+                                    tglKembali: "-",
+                                    fotoKembali: ""
+                                });
+                                if (self._ok) self._ok({ success: true, message: "Peminjaman berhasil dicatat dengan ID: " + newId });
+                            }, 300);
+                        },
+                        getAllPinjamanAktif: function() {
+                            const self = this;
+                            setTimeout(() => {
+                                const aktif = window.simDB.filter(x => x.status === "DIPINJAM");
+                                if (self._ok) self._ok({ success: true, data: aktif });
+                            }, 200);
+                        },
+                        submitPengembalian: function(rowId, base64) {
+                            const self = this;
+                            setTimeout(() => {
+                                const item = window.simDB.find(x => x.rowNumber == rowId);
+                                if (item) {
+                                    item.status = "DONE";
+                                    item.tglKembali = new Date().toLocaleDateString('id-ID') + " " + new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+                                    item.fotoKembali = base64;
+                                }
+                                if (self._ok) self._ok({ success: true, message: "Barang berhasil dikembalikan!" });
+                            }, 300);
+                        },
+                        getHistoriByNRP: function(keyword) {
+                            const self = this;
+                            setTimeout(() => {
+                                const key = String(keyword || "").trim().toLowerCase();
+                                const hasil = window.simDB.filter(x => x.status === "DONE" && (x.nrp.toLowerCase() === key || x.idTransaksi.toLowerCase().includes(key)));
+                                if (self._ok) self._ok({ success: true, data: hasil });
+                            }, 200);
+                        },
+                        getAllData: function(pwd) {
+                            const self = this;
+                            setTimeout(() => {
+                                if (pwd === "admin123") {
+                                    if (self._ok) self._ok({ success: true, data: window.simDB });
+                                } else {
+                                    if (self._ok) self._ok({ success: false, message: "Password admin salah!" });
+                                }
+                            }, 200);
+                        }
+                    }
+                }
+            };
+        }
+
+        // ================= KONEKTOR UNIVERSAL BACKEND =================
+        function callBackend(action, params, onSuccess, onError) {
+            let done = false;
+            const timeoutId = setTimeout(() => {
+                if (!done) {
+                    done = true;
+                    if (onError) onError(new Error("Waktu koneksi habis (Timeout). Silakan periksa jaringan dan coba lagi."));
+                }
+            }, 25000);
+
+            function handleOk(res) {
+                if (done) return;
+                done = true;
+                clearTimeout(timeoutId);
+                if (onSuccess) onSuccess(res);
+            }
+
+            function handleErr(err) {
+                if (done) return;
+                done = true;
+                clearTimeout(timeoutId);
+                if (onError) onError(err || new Error("Terjadi gangguan koneksi."));
+            }
+
+            // Deteksi lingkungan: Gunakan google.script.run jika di dalam GAS, gunakan Fetch POST jika di Vercel/Hosting luar
+            const isNativeGAS = typeof google !== 'undefined' && google.script && typeof google.script.run !== 'undefined' && (window.location.hostname.includes('googleusercontent.com') || window.location.hostname.includes('script.google.com'));
+
+            if (!isNativeGAS && GAS_WEB_APP_URL && GAS_WEB_APP_URL.startsWith("http")) {
+                fetch(GAS_WEB_APP_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: action, params: params })
+                })
+                .then(r => r.json())
+                .then(d => handleOk(d))
+                .catch(e => handleErr(e));
+                return;
+            }
+
+            // Mode Google Apps Script Terintegrasi
+            try {
+                const runner = google.script.run
+                    .withSuccessHandler(handleOk)
+                    .withFailureHandler(handleErr);
+
+                if (action === "submitPeminjaman") runner.submitPeminjaman(params.data);
+                else if (action === "getAllPinjamanAktif") runner.getAllPinjamanAktif();
+                else if (action === "submitPengembalian") runner.submitPengembalian(params.rowNumber, params.base64Foto);
+                else if (action === "getHistoriByNRP") runner.getHistoriByNRP(params.keyword);
+                else if (action === "getAllData") runner.getAllData(params.password);
+            } catch (err) {
+                handleErr(err);
+            }
+        }
+
+        // Helper untuk link Google Drive agar langsung tampil di tag <img>
+        function formatDriveImgUrl(url, size = "w600") {
+            if (!url) return "";
+            const match = String(url).match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
+            if (match && match[1]) {
+                return "https://drive.google.com/thumbnail?id=" + match[1] + "&sz=" + size;
+            }
+            return url;
+        }
+
+        // ================= SISTEM NAVIGASI (TABS) =================
+        const tabs = ['peminjaman', 'pengembalian', 'histori', 'admin'];
+        function switchTab(tabId) {
+            tabs.forEach(t => {
+                const view = document.getElementById('view-' + t);
+                const btnDesk = document.getElementById('nav-d-' + t);
+                const btnMob = document.getElementById('nav-m-' + t);
+
+                if (t === tabId) {
+                    if (view) view.classList.remove('hidden');
+                    if (btnDesk) {
+                        btnDesk.className = "px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 bg-white text-indigo-600 shadow-xs";
+                    }
+                    if (btnMob) {
+                        btnMob.className = "flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-indigo-600";
+                    }
+                } else {
+                    if (view) view.classList.add('hidden');
+                    if (btnDesk) {
+                        btnDesk.className = "px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900";
+                    }
+                    if (btnMob) {
+                        btnMob.className = "flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-slate-500 hover:text-slate-900";
+                    }
+                }
+            });
+
+            if (tabId === 'pengembalian') {
+                if (pinjamanAktifCache !== null) {
+                    renderHasilPencarian(pinjamanAktifCache);
+                    muatSemuaPinjaman(true);
+                } else {
+                    muatSemuaPinjaman(false);
+                }
+            }
+        }
+
+        // ================= KOMPRESI GAMBAR CLIENT-SIDE =================
+        function compressImage(file, callback) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 850;
+
+                    if (width > height && width > maxDim) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    callback(canvas.toDataURL('image/jpeg', 0.72));
+                };
+            };
+        }
+
+        function previewUploadImage(input, imgElementId, containerId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById(imgElementId);
+                    const container = document.getElementById(containerId);
+                    img.src = e.target.result;
+                    container.classList.remove('hidden');
+                    if (containerId === 'previewPinjamContainer') {
+                        document.getElementById('placeholderPinjam').classList.add('hidden');
+                    } else if (containerId === 'previewKembaliContainer') {
+                        document.getElementById('placeholderKembali').classList.add('hidden');
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // ================= PEMINJAMAN =================
+        function handlePeminjamanSubmit(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('p_foto');
+            if (!fileInput.files || !fileInput.files[0]) {
+                showMsg("Perhatian", "Harap ambil atau unggah foto barang yang dipinjam!", true);
+                return;
+            }
+
+            showLoading("Menyimpan data peminjaman...");
+            compressImage(fileInput.files[0], function(base64Image) {
+                const payload = {
+                    nama: document.getElementById('p_nama').value.trim(),
+                    nrp: document.getElementById('p_nrp').value.trim(),
+                    perusahaan: document.getElementById('p_perusahaan').value.trim(),
+                    departemen: document.getElementById('p_departemen').value.trim(),
+                    section: document.getElementById('p_section').value.trim(),
+                    tglPeminjaman: document.getElementById('p_tanggal').value,
+                    keterangan: document.getElementById('p_keterangan').value.trim(),
+                    fotoPinjam: base64Image
+                };
+
+                callBackend("submitPeminjaman", { data: payload }, function(res) {
+                    hideLoading();
+                    if (res && res.success) {
+                        showMsg("Berhasil", res.message || "Peminjaman berhasil dicatat!");
+                        document.getElementById('formPeminjaman').reset();
+                        document.getElementById('previewPinjamContainer').classList.add('hidden');
+                        document.getElementById('placeholderPinjam').classList.remove('hidden');
+                        setDefaultDate();
+                        muatSemuaPinjaman(true);
+                    } else {
+                        showMsg("Gagal", (res && res.message) ? res.message : "Gagal menyimpan data.", true);
+                    }
+                }, function(err) {
+                    hideLoading();
+                    showMsg("Error", err.message, true);
+                });
+            });
+        }
+
+        // ================= PENGEMBALIAN (CEPAT & INSTAN) =================
+        let pinjamanAktifCache = null;
+
+        function setRefreshIndicator(loading) {
+            const icon = document.getElementById('iconRefreshPinjaman');
+            const txt = document.getElementById('txtRefreshPinjaman');
+            if (icon) {
+                if (loading) icon.classList.add('animate-spin');
+                else icon.classList.remove('animate-spin');
+            }
+            if (txt) {
+                txt.innerText = loading ? "Memperbarui..." : "Refresh Daftar";
+            }
+        }
+
+        function muatSemuaPinjaman(isSilent = false) {
+            setRefreshIndicator(true);
+            const emptyState = document.getElementById('k_empty_state');
+            if (!isSilent && (!pinjamanAktifCache || pinjamanAktifCache.length === 0)) {
+                emptyState.innerText = "Memuat daftar barang yang sedang dipinjam...";
+                emptyState.classList.remove('hidden');
+            }
+
+            callBackend("getAllPinjamanAktif", {}, function(res) {
+                setRefreshIndicator(false);
+                if (res && res.success) {
+                    pinjamanAktifCache = res.data || [];
+                    filterPinjamanLokal();
+                } else if (!isSilent) {
+                    showMsg("Gagal", (res && res.message) ? res.message : "Tidak dapat mengambil data pinjaman.", true);
+                }
+            }, function(err) {
+                setRefreshIndicator(false);
+                if (!isSilent) showMsg("Error", err.message, true);
+            });
+        }
+
+        function filterPinjamanLokal() {
+            const keyword = (document.getElementById('k_filter_input')?.value || "").trim().toLowerCase();
+            const source = pinjamanAktifCache || [];
+            if (!keyword) {
+                renderHasilPencarian(source);
+                return;
+            }
+            const filtered = source.filter(item =>
+                (item.nama || "").toLowerCase().includes(keyword) ||
+                (item.nrp || "").toLowerCase().includes(keyword) ||
+                (item.idTransaksi || "").toLowerCase().includes(keyword) ||
+                (item.keterangan || "").toLowerCase().includes(keyword) ||
+                (item.departemen || "").toLowerCase().includes(keyword)
+            );
+            renderHasilPencarian(filtered);
+        }
+
+        function renderHasilPencarian(data) {
+            const container = document.getElementById('k_results');
+            const emptyState = document.getElementById('k_empty_state');
+            
+            Array.from(container.children).forEach(c => { if(c.id !== 'k_empty_state') c.remove(); });
+            
+            if(!data || data.length === 0) {
+                emptyState.innerText = "Saat ini tidak ada tools atau barang yang sedang dipinjam.";
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            data.forEach(item => {
+                const imgSrc = formatDriveImgUrl(item.fotoUrl, "w400");
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col";
+                card.innerHTML = `
+                    <div class="h-44 bg-slate-100 relative overflow-hidden flex items-center justify-center">
+                        ${imgSrc ? `<img src="${imgSrc}" loading="lazy" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\\'text-xs text-slate-400\\'>Foto gagal dimuat</div>'">` : `<div class="text-xs text-slate-400">Tanpa Foto</div>`}
+                        <div class="absolute top-2.5 right-2.5 bg-indigo-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs">DIPINJAM</div>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="text-[11px] font-mono text-indigo-600 font-semibold mb-1">${item.idTransaksi}</div>
+                            <h4 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug mb-2">${item.keterangan}</h4>
+                            <div class="text-xs text-slate-600 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <div><span class="font-semibold text-slate-800">Peminjam:</span> ${item.nama || '-'} (${item.nrp || '-'})</div>
+                                <div><span class="font-semibold text-slate-800">Dept:</span> ${item.departemen || '-'}</div>
+                                <div><span class="font-semibold text-slate-800">Tgl Pinjam:</span> ${item.tglPeminjaman || '-'}</div>
+                            </div>
+                        </div>
+                        <button onclick="bukaModalKembali(${item.rowNumber})" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all">
+                            Kembalikan Barang
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function bukaModalKembali(rowId) {
+            document.getElementById('kembali_row_id').value = rowId;
+            document.getElementById('k_foto').value = '';
+            document.getElementById('previewKembaliContainer').classList.add('hidden');
+            document.getElementById('placeholderKembali').classList.remove('hidden');
+            document.getElementById('kembaliModal').classList.remove('hidden');
+        }
+
+        function closeKembaliModal() {
+            document.getElementById('kembaliModal').classList.add('hidden');
+        }
+
+        function prosesKembalikan() {
+            const rowId = document.getElementById('kembali_row_id').value;
+            const fileInput = document.getElementById('k_foto');
+            
+            if(!fileInput.files || !fileInput.files[0]) {
+                showMsg("Perhatian", "Harap ambil atau unggah foto bukti barang yang dikembalikan!", true);
+                return;
+            }
+            
+            closeKembaliModal();
+            showLoading("Memproses pengembalian...");
+            
+            compressImage(fileInput.files[0], function(base64Image) {
+                callBackend("submitPengembalian", { rowNumber: rowId, base64Foto: base64Image }, function(res) {
+                    hideLoading();
+                    if(res && res.success) {
+                        if (pinjamanAktifCache) {
+                            pinjamanAktifCache = pinjamanAktifCache.filter(x => x.rowNumber != rowId);
+                            filterPinjamanLokal();
+                        }
+                        showMsg("Sukses", res.message || "Barang berhasil dikembalikan!");
+                        muatSemuaPinjaman(true);
+                    } else {
+                        showMsg("Gagal", (res && res.message) ? res.message : "Gagal memproses pengembalian.", true);
+                    }
+                }, function(err) {
+                    hideLoading();
+                    showMsg("Error", err.message, true);
+                });
+            });
+        }
+
+        // ================= HISTORI =================
+        function cariHistori() {
+            const keyword = document.getElementById('h_nrp_search').value.trim();
+            if(!keyword) {
+                showMsg("Informasi", "Masukkan NRP atau ID Transaksi terlebih dahulu.", true);
+                return;
+            }
+            
+            showLoading("Mengambil riwayat...");
+            callBackend("getHistoriByNRP", { keyword: keyword }, function(res) {
+                hideLoading();
+                if (res && res.success) {
+                    renderHistori(res.data || []);
+                } else {
+                    showMsg("Error", (res && res.message) ? res.message : "Gagal mengambil riwayat.", true);
+                }
+            }, function(err) {
+                hideLoading();
+                showMsg("Error", err.message, true);
+            });
+        }
+
+        function renderHistori(data) {
+            const container = document.getElementById('h_results');
+            container.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200/80">Tidak ditemukan riwayat peminjaman dengan status DONE untuk pencarian tersebut.</div>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4";
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono text-indigo-600 font-semibold">${item.idTransaksi}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">DONE</span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm">${item.keterangan}</h4>
+                        <div class="text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1 pt-1">
+                            <span><strong class="text-slate-700">Peminjam:</strong> ${item.nama} (${item.nrp})</span>
+                            <span><strong class="text-slate-700">Pinjam:</strong> ${item.tglPinjam}</span>
+                            <span><strong class="text-slate-700">Kembali:</strong> ${item.tglKembali}</span>
+                        </div>
+                    </div>
+                    <button onclick="bukaModalFoto('${item.idTransaksi}', '${item.keterangan}', '${item.nama} (${item.nrp})', '${item.fotoPinjam}', '${item.tglPinjam}', '${item.fotoKembali}', '${item.tglKembali}')" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-all">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span>Lihat Bukti Foto</span>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ================= ADMIN DASHBOARD =================
+        let globalAdminPassword = "";
+        let adminDataCache = [];
+
+        function handleAdminLogin() {
+            const pwd = document.getElementById('admin_password').value.trim();
+            if(!pwd) {
+                showMsg("Perhatian", "Masukkan password admin!", true);
+                return;
+            }
+            globalAdminPassword = pwd;
+            muatDataAdmin();
+        }
+
+        function muatDataAdmin() {
+            showLoading("Memuat data administrator...");
+            callBackend("getAllData", { password: globalAdminPassword }, function(res) {
+                hideLoading();
+                if(res && res.success) {
+                    document.getElementById('admin-login').classList.add('hidden');
+                    document.getElementById('admin-dashboard').classList.remove('hidden');
+                    adminDataCache = res.data || [];
+                    renderAdminTable(adminDataCache);
+                } else {
+                    showMsg("Akses Ditolak", (res && res.message) ? res.message : "Password admin salah!", true);
+                }
+            }, function(err) {
+                hideLoading();
+                showMsg("Error", err.message, true);
+            });
+        }
+
+        function logoutAdmin() {
+            globalAdminPassword = "";
+            adminDataCache = [];
+            document.getElementById('admin_password').value = "";
+            document.getElementById('admin-dashboard').classList.add('hidden');
+            document.getElementById('admin-login').classList.remove('hidden');
+        }
+
+        function filterAdminTable() {
+            const key = (document.getElementById('admin_filter_input')?.value || "").toLowerCase().trim();
+            if (!key) {
+                renderAdminTable(adminDataCache);
+                return;
+            }
+            const filtered = adminDataCache.filter(x =>
+                (x.idTransaksi || "").toLowerCase().includes(key) ||
+                (x.nama || "").toLowerCase().includes(key) ||
+                (x.nrp || "").toLowerCase().includes(key) ||
+                (x.keterangan || "").toLowerCase().includes(key) ||
+                (x.perusahaan || "").toLowerCase().includes(key) ||
+                (x.departemen || "").toLowerCase().includes(key)
+            );
+            renderAdminTable(filtered);
+        }
+
+        function renderAdminTable(data) {
+            const tbody = document.getElementById('admin_table_body');
+            tbody.innerHTML = '';
+
+            if(!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada rekaman data transaksi.</td></tr>`;
+                return;
+            }
+
+            data.forEach(row => {
+                const isDone = (row.status || "").toUpperCase() === 'DONE';
+                const badgeClass = isDone ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200';
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3.5">
+                        <div class="font-mono font-semibold text-slate-900">${row.idTransaksi}</div>
+                        <div class="text-[11px] text-slate-400">${row.timestampPinjam || row.tglPinjam || '-'}</div>
+                    </td>
+                    <td class="p-3.5">
+                        <div class="font-semibold text-slate-900">${row.nama}</div>
+                        <div class="text-[11px] text-slate-500">${row.nrp} • ${row.perusahaan || '-'}</div>
+                    </td>
+                    <td class="p-3.5 text-slate-600">
+                        <div>${row.departemen || '-'}</div>
+                        <div class="text-[11px] text-slate-400">${row.section || '-'}</div>
+                    </td>
+                    <td class="p-3.5 font-medium text-slate-800 max-w-xs truncate" title="${row.keterangan}">
+                        ${row.keterangan}
+                    </td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="bukaModalFoto('${row.idTransaksi}', '${escapeHtml(row.keterangan)}', '${escapeHtml(row.nama)} (${row.nrp})', '${row.fotoPinjam}', '${row.tglPinjam || row.timestampPinjam}', '${row.fotoKembali}', '${row.tglKembali}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeClass} transition-all">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span>${row.status}</span>
+                        </button>
+                    </td>
+                    <td class="p-3.5 text-slate-500 font-mono text-[11px]">
+                        ${row.tglKembali || '-'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        // ================= DETAIL POP-UP FOTO =================
+        function bukaModalFoto(idTrx, keterangan, peminjam, fotoPinjam, tglPinjam, fotoKembali, tglKembali) {
+            document.getElementById('modalDetailId').innerText = idTrx;
+            document.getElementById('modalKeterangan').innerText = keterangan;
+            document.getElementById('modalPeminjam').innerText = peminjam;
+            document.getElementById('modalTglPinjam').innerText = tglPinjam || '-';
+            document.getElementById('modalTglKembali').innerText = tglKembali || 'Belum dikembalikan';
+
+            const imgPinjam = document.getElementById('modalFotoPinjam');
+            imgPinjam.src = formatDriveImgUrl(fotoPinjam, "w800");
+
+            const imgKembali = document.getElementById('modalFotoKembali');
+            if (fotoKembali && fotoKembali.trim() !== "" && fotoKembali !== "-") {
+                imgKembali.src = formatDriveImgUrl(fotoKembali, "w800");
+                imgKembali.classList.remove('hidden');
+            } else {
+                imgKembali.src = "";
+                imgKembali.classList.add('hidden');
+            }
+
+            document.getElementById('photoDetailModal').classList.remove('hidden');
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photoDetailModal').classList.add('hidden');
+        }
+
+        // ================= GLOBAL HELPERS & MODALS =================
+        function showLoading(text) {
+            document.getElementById('loadingText').innerText = text || "Memproses...";
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('loadingOverlay').classList.add('flex');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            document.getElementById('loadingOverlay').classList.remove('flex');
+        }
+
+        function showMsg(title, msg, isError = false) {
+            document.getElementById('msgTitle').innerText = title;
+            document.getElementById('msgBody').innerText = msg;
+            const iconWrap = document.getElementById('msgIconContainer');
+            if (isError) {
+                iconWrap.className = "w-12 h-12 mx-auto rounded-2xl flex items-center justify-center bg-rose-50 text-rose-600";
+                iconWrap.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            } else {
+                iconWrap.className = "w-12 h-12 mx-auto rounded-2xl flex items-center justify-center bg-emerald-50 text-emerald-600";
+                iconWrap.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            }
+            document.getElementById('msgModal').classList.remove('hidden');
+        }
+
+        function closeMsgModal() {
+            document.getElementById('msgModal').classList.add('hidden');
+        }
+
+        function setDefaultDate() {
+            const dateInput = document.getElementById('p_tanggal');
+            if (dateInput) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        // ================= INISIALISASI =================
+        window.addEventListener('DOMContentLoaded', function() {
+            setDefaultDate();
+            // Pre-load data pinjaman secara diam-diam di latar belakang
+            muatSemuaPinjaman(true);
+        });
+    </script>
+</body>
+</html>
