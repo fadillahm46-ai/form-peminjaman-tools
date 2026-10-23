@@ -250,11 +250,17 @@ function submitPengembalian(rowNumber, base64Foto) {
 function getHistoriByNRP(keyword) {
   try {
     var sheet = getActiveSheet();
-    var data = sheet.getDataRange().getValues();
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return { success: true, data: [] };
+    }
+
+    // Menggunakan getDisplayValues() instan tanpa loop formatSafeDate
+    var data = sheet.getRange(2, 1, lastRow - 1, 13).getDisplayValues();
     var results = [];
     var searchKey = String(keyword || "").trim().toLowerCase();
     
-    for (var i = 1; i < data.length; i++) {
+    for (var i = data.length - 1; i >= 0; i--) {
       var row = data[i];
       var idTrx = String(row[0] || "").trim();
       var nrp = String(row[3] || "").trim();
@@ -266,16 +272,18 @@ function getHistoriByNRP(keyword) {
           idTransaksi: idTrx,
           nama: String(row[2] || ""),
           nrp: nrp,
+          departemen: String(row[5] || ""),
+          section: String(row[6] || ""),
+          perusahaan: String(row[4] || ""),
           keterangan: String(row[8] || ""),
-          tglPinjam: formatSafeDate(row[7], "dd/MM/yyyy"),
-          tglKembali: formatSafeDate(row[11], "dd/MM/yyyy HH:mm"),
+          tglPinjam: row[7] || row[1] || "-",
+          tglKembali: row[11] || "-",
           fotoPinjam: String(row[9] || ""),
           fotoKembali: String(row[12] || ""),
           status: status
         });
       }
     }
-    results.reverse();
     return { success: true, data: results };
   } catch (error) {
     return { success: false, message: "Error: " + error.toString() };
@@ -289,30 +297,35 @@ function getAllData(password) {
     }
     
     var sheet = getActiveSheet();
-    var data = sheet.getDataRange().getValues();
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return { success: true, data: [] };
+    }
+    
+    // Optimasi super cepat: Membaca teks terformat langsung dari spreadsheet dalam 1 batch
+    var data = sheet.getRange(2, 1, lastRow - 1, 13).getDisplayValues();
     var results = [];
     
-    for (var i = 1; i < data.length; i++) {
+    for (var i = data.length - 1; i >= 0; i--) {
       var row = data[i];
       if (!row[0]) continue;
 
       results.push({
-        idTransaksi: String(row[0] || ""),
-        timestampPinjam: formatSafeDate(row[1], "dd/MM/yyyy HH:mm"),
-        nama: String(row[2] || ""),
-        nrp: String(row[3] || ""),
-        perusahaan: String(row[4] || ""),
-        departemen: String(row[5] || ""),
-        section: String(row[6] || ""),
-        tglPinjam: formatSafeDate(row[7], "dd/MM/yyyy"),
-        keterangan: String(row[8] || ""),
-        fotoPinjam: String(row[9] || ""),
-        status: String(row[10] || "DIPINJAM"),
-        tglKembali: formatSafeDate(row[11], "dd/MM/yyyy HH:mm"),
-        fotoKembali: String(row[12] || "")
+        idTransaksi: row[0] || "",
+        timestampPinjam: row[1] || "",
+        nama: row[2] || "",
+        nrp: row[3] || "",
+        perusahaan: row[4] || "",
+        departemen: row[5] || "",
+        section: row[6] || "",
+        tglPinjam: row[7] || "",
+        keterangan: row[8] || "",
+        fotoPinjam: row[9] || "",
+        status: row[10] || "DIPINJAM",
+        tglKembali: row[11] || "-",
+        fotoKembali: row[12] || ""
       });
     }
-    results.reverse();
     return { success: true, data: results };
   } catch (error) {
     return { success: false, message: "Error: " + error.toString() };
