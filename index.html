@@ -218,8 +218,88 @@
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-slate-900">Akses Administrator</h3>
+                    <p class="text-xs text-slate-500 mt-1">Masukkan kata sandi admin untuk melihat seluruh transaksi inventaris.</p>
                 </div>
                 <div class="space-y-3">
+                    <input type="password" id="admin_password" placeholder="Masukkan Password Admin" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
+                    <button onclick="handleAdminLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 transition-all active:scale-[0.99]">
+                        Masuk Dashboard
+                    </button>
+                </div>
+            </div>
+
+            <!-- Rekapan Dashboard Administrator -->
+            <div id="admin-dashboard" class="hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900">Rekap Transaksi Tools & Barang</h2>
+                            <p class="text-xs text-slate-500 mt-1">Klik badge status <span class="font-semibold text-indigo-600">DIPINJAM</span> atau <span class="font-semibold text-emerald-600">DONE</span> untuk melihat detail foto peminjaman & pengembalian.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="adminRefreshBtn" onclick="muatDataAdmin(true)" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-all">
+                                <svg id="adminRefreshIcon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span id="adminRefreshText">Refresh</span>
+                            </button>
+                            <button onclick="logoutAdmin()" class="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-semibold text-xs transition-all">
+                                Keluar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Live Search Admin -->
+                    <div class="relative">
+                        <input type="text" id="admin_filter_input" oninput="filterAdminTable()" placeholder="Cari di tabel: Nama, NRP, Perusahaan, atau Nama Barang..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </div>
+
+                <!-- Tabel Data Admin -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                                <tr>
+                                    <th class="p-3.5">ID & Waktu</th>
+                                    <th class="p-3.5">Peminjam</th>
+                                    <th class="p-3.5">Dept / Sec</th>
+                                    <th class="p-3.5">Nama Tools / Barang</th>
+                                    <th class="p-3.5 text-center">Status (Klik Foto)</th>
+                                    <th class="p-3.5">Waktu Kembali</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin_table_body" class="divide-y divide-slate-100">
+                                <tr>
+                                    <td colspan="6" class="p-8 text-center text-slate-400">Belum ada rekaman data transaksi.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- =================== MOBILE BOTTOM NAVIGATION =================== -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200/80 px-2 py-1.5 flex items-center justify-around shadow-lg">
+        <button id="nav-m-peminjaman" onclick="switchTab('peminjaman')" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-indigo-600">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="text-[10px] font-medium">Pinjam</span>
+        </button>
+        <button id="nav-m-pengembalian" onclick="switchTab('pengembalian')" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-slate-500 hover:text-slate-900">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span class="text-[10px] font-medium">Kembali</span>
+        </button>
+        <button id="nav-m-histori" onclick="switchTab('histori')" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-slate-500 hover:text-slate-900">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[10px] font-medium">Histori</span>
+        </button>
+        <button id="nav-m-admin" onclick="switchTab('admin')" class="flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-slate-500 hover:text-slate-900">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span class="text-[10px] font-medium">Admin</span>
+        </button>
+    </nav>
+
     <!-- =================== MODAL: VERIFIKASI NRP PEMINJAM =================== -->
     <div id="verifNrpModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onclick="closeVerifNrpModal()"></div>
@@ -287,7 +367,7 @@
 
         <!-- Zoomable Viewport -->
         <div id="zoomViewport" class="absolute inset-0 flex items-center justify-center p-4 cursor-grab active:cursor-grabbing">
-            <img id="zoomImage" src="" alt="Full Foto" class="max-w-full max-h-[85vh] object-contain transition-transform duration-100 ease-out will-change-transform rounded-xl shadow-2xl pointer-events-auto">
+            <img id="zoomImage" src="" alt="Full Foto" referrerpolicy="no-referrer" class="max-w-full max-h-[85vh] object-contain transition-transform duration-100 ease-out will-change-transform rounded-xl shadow-2xl pointer-events-auto">
         </div>
 
         <!-- Touch Hint on Bottom -->
@@ -364,7 +444,7 @@
                             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Foto Pinjam</span>
                         </div>
                         <div class="h-48 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center mb-2 relative border border-slate-200/80">
-                            <img id="modalFotoPinjam" alt="Foto Pinjam" class="w-full h-full object-contain hidden">
+                            <img id="modalFotoPinjam" alt="Foto Pinjam" referrerpolicy="no-referrer" class="w-full h-full object-contain hidden">
                             <div id="modalFallbackPinjam" class="text-xs text-slate-400 p-4 text-center flex flex-col items-center justify-center">
                                 <svg class="w-8 h-8 text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 <span id="modalFallbackPinjamTxt">Tidak ada foto</span>
@@ -383,7 +463,7 @@
                             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Foto Kembali</span>
                         </div>
                         <div class="h-48 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center mb-2 relative border border-slate-200/80">
-                            <img id="modalFotoKembali" alt="Foto Kembali" class="w-full h-full object-contain hidden">
+                            <img id="modalFotoKembali" alt="Foto Kembali" referrerpolicy="no-referrer" class="w-full h-full object-contain hidden">
                             <div id="modalFallbackKembali" class="text-xs text-slate-400 p-4 text-center flex flex-col items-center justify-center">
                                 <svg class="w-8 h-8 text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 <span id="modalFallbackKembaliTxt">Belum dikembalikan</span>
