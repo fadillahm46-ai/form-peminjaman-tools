@@ -28,6 +28,7 @@ function setupDatabase() {
     "Timestamp Peminjaman", 
     "Nama Lengkap", 
     "NRP", 
+    "No WhatsApp",
     "Perusahaan", 
     "Departemen", 
     "Section", 
@@ -46,6 +47,20 @@ function setupDatabase() {
     headerRange.setFontColor("#FFFFFF");
     headerRange.setFontWeight("bold");
     sheet.setFrozenRows(1);
+  } else {
+    // Pastikan jika kolom No WhatsApp belum ada di sheet lama, disisipkan tanpa merusak urutan
+    var currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var hasWa = false;
+    for (var k = 0; k < currentHeaders.length; k++) {
+      if (String(currentHeaders[k]).toLowerCase().indexOf("whatsapp") !== -1 || String(currentHeaders[k]).toLowerCase().indexOf("wa") !== -1) {
+        hasWa = true;
+        break;
+      }
+    }
+    if (!hasWa && sheet.getLastColumn() >= 4) {
+      sheet.insertColumnAfter(4);
+      sheet.getRange(1, 5).setValue("No WhatsApp");
+    }
   }
   
   var folders = DriveApp.getFoldersByName("Aplikasi_Peminjaman_Foto");
@@ -173,11 +188,27 @@ function submitPeminjaman(data) {
     var timestamp = new Date();
     var fotoPinjamUrl = saveImageToDrive(data.fotoPinjam, idTransaksi + "_pinjam.jpg");
     
+    // Periksa apakah sheet memiliki kolom No WhatsApp di kolom 5
+    var headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var hasWa = false;
+    for (var k = 0; k < headerRow.length; k++) {
+      if (String(headerRow[k]).toLowerCase().indexOf("whatsapp") !== -1 || String(headerRow[k]).toLowerCase().indexOf("wa") !== -1) {
+        hasWa = true;
+        break;
+      }
+    }
+    if (!hasWa && sheet.getLastColumn() >= 4) {
+      sheet.insertColumnAfter(4);
+      sheet.getRange(1, 5).setValue("No WhatsApp");
+      hasWa = true;
+    }
+
     var rowData = [
       idTransaksi,
       timestamp,
       data.nama,
       data.nrp,
+      data.noWa || "-",
       data.perusahaan,
       data.departemen,
       data.section,
@@ -204,23 +235,45 @@ function getAllPinjamanAktif() {
       return { success: true, data: [] };
     }
     
-    var data = sheet.getRange(2, 1, lastRow - 1, 11).getDisplayValues();
+    var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
+    var headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var results = [];
+
+    // Deteksi letak index kolom secara dinamis
+    var idxStatus = 11;
+    var idxFoto = 10;
+    var idxKeterangan = 9;
+    var idxTglPinjam = 8;
+    var idxDept = 6;
+    var idxWa = 4;
+    var idxNrp = 3;
+
+    for (var h = 0; h < headerRow.length; h++) {
+      var head = String(headerRow[h]).toLowerCase();
+      if (head.indexOf("status") !== -1) idxStatus = h;
+      else if (head.indexOf("pinjam") !== -1 && head.indexOf("foto") !== -1) idxFoto = h;
+      else if (head.indexOf("keterangan") !== -1) idxKeterangan = h;
+      else if (head.indexOf("tanggal peminjaman") !== -1) idxTglPinjam = h;
+      else if (head.indexOf("departemen") !== -1) idxDept = h;
+      else if (head.indexOf("whatsapp") !== -1 || head.indexOf("wa") !== -1) idxWa = h;
+      else if (head.indexOf("nrp") !== -1) idxNrp = h;
+    }
     
     for (var i = data.length - 1; i >= 0; i--) {
       var row = data[i];
-      var status = (row[10] || "").trim().toUpperCase();
+      var status = (row[idxStatus] || "").trim().toUpperCase();
       
       if (status === "DIPINJAM") {
         results.push({
           rowNumber: i + 2,
           idTransaksi: row[0] || "",
           nama: row[2] || "",
-          nrp: row[3] || "",
-          departemen: row[5] || "",
-          tglPeminjaman: row[7] || "-",
-          keterangan: row[8] || "",
-          fotoUrl: row[9] || ""
+          nrp: row[idxNrp] || "",
+          noWa: row[idxWa] || "-",
+          departemen: row[idxDept] || "",
+          tglPeminjaman: row[idxTglPinjam] || "-",
+          keterangan: row[idxKeterangan] || "",
+          fotoUrl: row[idxFoto] || ""
         });
       }
     }
@@ -236,10 +289,22 @@ function submitPengembalian(rowNumber, base64Foto) {
     var timestamp = new Date();
     var idTransaksi = sheet.getRange(rowNumber, 1).getValue();
     var fotoKembaliUrl = saveImageToDrive(base64Foto, idTransaksi + "_kembali.jpg");
+    var headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    var colStatus = 12;
+    var colTglKembali = 13;
+    var colFotoKembali = 14;
+
+    for (var h = 0; h < headerRow.length; h++) {
+      var head = String(headerRow[h]).toLowerCase();
+      if (head.indexOf("status") !== -1) colStatus = h + 1;
+      else if (head.indexOf("pengembalian") !== -1 && head.indexOf("timestamp") !== -1) colTglKembali = h + 1;
+      else if (head.indexOf("kembali") !== -1 && head.indexOf("foto") !== -1) colFotoKembali = h + 1;
+    }
     
-    sheet.getRange(rowNumber, 11).setValue("DONE");
-    sheet.getRange(rowNumber, 12).setValue(timestamp);
-    sheet.getRange(rowNumber, 13).setValue(fotoKembaliUrl);
+    sheet.getRange(rowNumber, colStatus).setValue("DONE");
+    sheet.getRange(rowNumber, colTglKembali).setValue(timestamp);
+    sheet.getRange(rowNumber, colFotoKembali).setValue(fotoKembaliUrl);
     
     return { success: true, message: "Barang berhasil dikembalikan!" };
   } catch (error) {
@@ -255,8 +320,7 @@ function getHistoriByNRP(keyword) {
       return { success: true, data: [] };
     }
 
-    // Menggunakan getDisplayValues() instan tanpa loop formatSafeDate
-    var data = sheet.getRange(2, 1, lastRow - 1, 13).getDisplayValues();
+    var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
     var results = [];
     var searchKey = String(keyword || "").trim().toLowerCase();
     
@@ -264,7 +328,7 @@ function getHistoriByNRP(keyword) {
       var row = data[i];
       var idTrx = String(row[0] || "").trim();
       var nrp = String(row[3] || "").trim();
-      var status = String(row[10] || "").trim().toUpperCase();
+      var status = String(row[11] || row[10] || "").trim().toUpperCase();
       var isMatch = (nrp.toLowerCase() === searchKey) || (idTrx.toLowerCase().indexOf(searchKey) !== -1);
       
       if (searchKey !== "" && isMatch && status === "DONE") {
@@ -272,14 +336,15 @@ function getHistoriByNRP(keyword) {
           idTransaksi: idTrx,
           nama: String(row[2] || ""),
           nrp: nrp,
-          departemen: String(row[5] || ""),
-          section: String(row[6] || ""),
-          perusahaan: String(row[4] || ""),
-          keterangan: String(row[8] || ""),
-          tglPinjam: row[7] || row[1] || "-",
-          tglKembali: row[11] || "-",
-          fotoPinjam: String(row[9] || ""),
-          fotoKembali: String(row[12] || ""),
+          noWa: String(row[4] || "-"),
+          departemen: String(row[6] || row[5] || ""),
+          section: String(row[7] || row[6] || ""),
+          perusahaan: String(row[5] || row[4] || ""),
+          keterangan: String(row[9] || row[8] || ""),
+          tglPinjam: row[8] || row[7] || row[1] || "-",
+          tglKembali: row[12] || row[11] || "-",
+          fotoPinjam: String(row[10] || row[9] || ""),
+          fotoKembali: String(row[13] || row[12] || ""),
           status: status
         });
       }
@@ -302,8 +367,7 @@ function getAllData(password) {
       return { success: true, data: [] };
     }
     
-    // Optimasi super cepat: Membaca teks terformat langsung dari spreadsheet dalam 1 batch
-    var data = sheet.getRange(2, 1, lastRow - 1, 13).getDisplayValues();
+    var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
     var results = [];
     
     for (var i = data.length - 1; i >= 0; i--) {
@@ -315,15 +379,16 @@ function getAllData(password) {
         timestampPinjam: row[1] || "",
         nama: row[2] || "",
         nrp: row[3] || "",
-        perusahaan: row[4] || "",
-        departemen: row[5] || "",
-        section: row[6] || "",
-        tglPinjam: row[7] || "",
-        keterangan: row[8] || "",
-        fotoPinjam: row[9] || "",
-        status: row[10] || "DIPINJAM",
-        tglKembali: row[11] || "-",
-        fotoKembali: row[12] || ""
+        noWa: row[4] || "-",
+        perusahaan: row[5] || row[4] || "",
+        departemen: row[6] || row[5] || "",
+        section: row[7] || row[6] || "",
+        tglPinjam: row[8] || row[7] || "",
+        keterangan: row[9] || row[8] || "",
+        fotoPinjam: row[10] || row[9] || "",
+        status: (row[11] || row[10] || "DIPINJAM").trim().toUpperCase(),
+        tglKembali: row[12] || row[11] || "-",
+        fotoKembali: row[13] || row[12] || ""
       });
     }
     return { success: true, data: results };
