@@ -1437,12 +1437,16 @@
             const fallbackTxt = document.getElementById(fallbackTxtId);
             const linkEl = document.getElementById(linkId);
 
-            if (!rawUrl || rawUrl.trim() === "" || rawUrl === "-") {
-                imgEl.src = "";
-                imgEl.classList.add('hidden');
-                fallbackEl.classList.remove('hidden');
-                if (fallbackTxt) fallbackTxt.innerText = defaultEmptyMsg;
-                if (linkEl) linkEl.classList.add('hidden');
+            // Bersihkan terlebih dahulu atribut gambar sebelumnya agar tidak terjadi 'ghosting' gambar lama
+            imgEl.removeAttribute('src');
+            imgEl.src = "";
+            imgEl.classList.add('hidden');
+            fallbackEl.classList.remove('hidden');
+            if (fallbackTxt) fallbackTxt.innerText = defaultEmptyMsg;
+            if (linkEl) linkEl.classList.add('hidden');
+
+            // Abaikan jika URL kosong, tanda strip, atau berisikan teks status 'DIPINJAM'
+            if (!rawUrl || rawUrl.trim() === "" || rawUrl === "-" || rawUrl === "DIPINJAM") {
                 return;
             }
 
@@ -1477,13 +1481,15 @@
 
         function bukaModalFotoDetail(item) {
             if (!item) return;
+            const isDipinjam = (item.status || "").toUpperCase() === "DIPINJAM";
+
             document.getElementById('modalDetailId').innerText = item.idTransaksi || '-';
             document.getElementById('modalKeterangan').innerText = item.keterangan || '-';
-            document.getElementById('modalPeminjam').innerText = (item.nama || '-') + ' (' + (item.nrp || '-') + ')';
+            document.getElementById('modalPeminjam').innerText = (item.nama || '-') + (item.nrp ? ' (' + item.nrp + ')' : '');
             
             const waWrap = document.getElementById('modalWaWrap');
             const waLink = document.getElementById('modalWaLink');
-            if (item.noWa && item.noWa !== '-') {
+            if (item.noWa && item.noWa !== '-' && item.noWa !== '') {
                 let cleanPhone = String(item.noWa).replace(/\D/g, '');
                 if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
                 waLink.href = 'https://wa.me/' + cleanPhone;
@@ -1500,10 +1506,16 @@
             }
 
             document.getElementById('modalTglPinjam').innerText = item.tglPinjam || item.timestampPinjam || '-';
-            document.getElementById('modalTglKembali').innerText = item.tglKembali || 'Belum dikembalikan';
+            
+            // Logika ketat: Jika barang masih berstatus DIPINJAM, waktu kembali WAJIB 'Belum dikembalikan'
+            const tglKembaliTeks = isDipinjam ? 'Belum dikembalikan' : (item.tglKembali && item.tglKembali !== '-' && item.tglKembali !== 'DIPINJAM' ? item.tglKembali : 'Belum dikembalikan');
+            document.getElementById('modalTglKembali').innerText = tglKembaliTeks;
 
             setPhotoDisplay('modalFotoPinjam', 'modalFallbackPinjam', 'modalFallbackPinjamTxt', 'modalLinkPinjam', item.fotoPinjam || item.fotoUrl, 'Tidak ada foto peminjaman');
-            setPhotoDisplay('modalFotoKembali', 'modalFallbackKembali', 'modalFallbackKembaliTxt', 'modalLinkKembali', item.fotoKembali, 'Barang belum dikembalikan');
+            
+            // Jika barang masih berstatus DIPINJAM, paksa URL foto kembali menjadi kosong
+            const fotoKembaliUrl = isDipinjam ? '' : item.fotoKembali;
+            setPhotoDisplay('modalFotoKembali', 'modalFallbackKembali', 'modalFallbackKembaliTxt', 'modalLinkKembali', fotoKembaliUrl, 'Barang belum dikembalikan');
 
             document.getElementById('photoDetailModal').classList.remove('hidden');
         }
@@ -1523,6 +1535,11 @@
 
         function closePhotoModal() {
             document.getElementById('photoDetailModal').classList.add('hidden');
+            // Bersihkan kembali gambar saat modal ditutup
+            const imgPinjam = document.getElementById('modalFotoPinjam');
+            const imgKembali = document.getElementById('modalFotoKembali');
+            if (imgPinjam) { imgPinjam.src = ""; imgPinjam.classList.add('hidden'); }
+            if (imgKembali) { imgKembali.src = ""; imgKembali.classList.add('hidden'); }
         }
 
         // ================= GLOBAL HELPERS & MODALS =================
