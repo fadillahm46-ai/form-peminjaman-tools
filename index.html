@@ -88,8 +88,8 @@
 
                         <!-- No WhatsApp -->
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">No. WhatsApp <span class="text-rose-500">*</span></label>
-                            <input type="tel" id="p_wa" required placeholder="Contoh: 081234567890" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">No. WhatsApp <span class="text-slate-400 font-normal lowercase">(opsional)</span></label>
+                            <input type="tel" id="p_wa" placeholder="Contoh: 081234567890" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
                         </div>
 
                         <!-- Perusahaan -->
@@ -750,19 +750,49 @@
             }
         }
 
-        // ================= KOMPRESI GAMBAR CLIENT-SIDE =================
-        function compressImage(file, callback) {
+        // ================= KOMPRESI GAMBAR CEPAT & PRE-LOAD CLIENT-SIDE =================
+        let compressedPinjamBase64 = null;
+        let compressedKembaliBase64 = null;
+
+        function compressImageFast(file, maxWidth, quality, callback) {
+            if (!file) return callback(null);
+            const targetDim = maxWidth || 800;
+            const targetQual = quality || 0.65;
+
+            // Jalur Cepat: createImageBitmap pada browser modern (multi-threaded, tidak memblokir UI)
+            if (window.createImageBitmap) {
+                createImageBitmap(file).then(bmp => {
+                    let width = bmp.width;
+                    let height = bmp.height;
+                    if (width > height && width > targetDim) {
+                        height = Math.round((height * targetDim) / width);
+                        width = targetDim;
+                    } else if (height > targetDim) {
+                        width = Math.round((width * targetDim) / height);
+                        height = targetDim;
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(bmp, 0, 0, width, height);
+                    callback(canvas.toDataURL('image/jpeg', targetQual));
+                }).catch(() => {
+                    fallbackCompress(file, targetDim, targetQual, callback);
+                });
+            } else {
+                fallbackCompress(file, targetDim, targetQual, callback);
+            }
+        }
+
+        function fallbackCompress(file, maxDim, quality, callback) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = function(event) {
                 const img = new Image();
-                img.src = event.target.result;
                 img.onload = function() {
-                    const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    const maxDim = 850;
-
                     if (width > height && width > maxDim) {
                         height = Math.round((height * maxDim) / width);
                         width = maxDim;
@@ -770,73 +800,75 @@
                         width = Math.round((width * maxDim) / height);
                         height = maxDim;
                     }
-
+                    const canvas = document.createElement('canvas');
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    callback(canvas.toDataURL('image/jpeg', 0.72));
+                    callback(canvas.toDataURL('image/jpeg', quality));
                 };
+                img.src = event.target.result;
             };
         }
 
         function previewUploadImage(input, imgElementId, containerId) {
             if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.getElementById(imgElementId);
-                    const container = document.getElementById(containerId);
-                    img.src = e.target.result;
-                    container.classList.remove('hidden');
+                const file = input.files[0];
+                const img = document.getElementById(imgElementId);
+                const container = document.getElementById(containerId);
+                
+                // Kompresi instan langsung saat foto dipilih/diambil
+                compressImageFast(file, 800, 0.65, function(base64) {
                     if (containerId === 'previewPinjamContainer') {
+                        compressedPinjamBase64 = base64;
                         document.getElementById('placeholderPinjam').classList.add('hidden');
                     } else if (containerId === 'previewKembaliContainer') {
+                        compressedKembaliBase64 = base64;
                         document.getElementById('placeholderKembali').classList.add('hidden');
                     }
-                };
-                reader.readAsDataURL(input.files[0]);
+                    img.src = base64;
+                    container.classList.remove('hidden');
+                });
             }
         }
 
         // ================= PEMINJAMAN =================
         function handlePeminjamanSubmit(e) {
             e.preventDefault();
-            const fileInput = document.getElementById('p_foto');
-            if (!fileInput.files || !fileInput.files[0]) {
+            if (!compressedPinjamBase64) {
                 showMsg("Perhatian", "Harap ambil atau unggah foto barang yang dipinjam!", true);
                 return;
             }
 
             showLoading("Menyimpan data peminjaman...");
-            compressImage(fileInput.files[0], function(base64Image) {
-                const payload = {
-                    nama: document.getElementById('p_nama').value.trim(),
-                    nrp: document.getElementById('p_nrp').value.trim(),
-                    noWa: document.getElementById('p_wa').value.trim(),
-                    perusahaan: document.getElementById('p_perusahaan').value.trim(),
-                    departemen: document.getElementById('p_departemen').value.trim(),
-                    section: document.getElementById('p_section').value.trim(),
-                    tglPeminjaman: document.getElementById('p_tanggal').value,
-                    keterangan: document.getElementById('p_keterangan').value.trim(),
-                    fotoPinjam: base64Image
-                };
+            const payload = {
+                nama: document.getElementById('p_nama').value.trim(),
+                nrp: document.getElementById('p_nrp').value.trim(),
+                noWa: document.getElementById('p_wa').value.trim() || "-",
+                perusahaan: document.getElementById('p_perusahaan').value.trim(),
+                departemen: document.getElementById('p_departemen').value.trim(),
+                section: document.getElementById('p_section').value.trim(),
+                tglPeminjaman: document.getElementById('p_tanggal').value,
+                keterangan: document.getElementById('p_keterangan').value.trim(),
+                fotoPinjam: compressedPinjamBase64
+            };
 
-                callBackend("submitPeminjaman", { data: payload }, function(res) {
-                    hideLoading();
-                    if (res && res.success) {
-                        showMsg("Berhasil", res.message || "Peminjaman berhasil dicatat!");
-                        document.getElementById('formPeminjaman').reset();
-                        document.getElementById('previewPinjamContainer').classList.add('hidden');
-                        document.getElementById('placeholderPinjam').classList.remove('hidden');
-                        setDefaultDate();
-                        muatSemuaPinjaman(true);
-                    } else {
-                        showMsg("Gagal", (res && res.message) ? res.message : "Gagal menyimpan data.", true);
-                    }
-                }, function(err) {
-                    hideLoading();
-                    showMsg("Error", err.message, true);
-                });
+            callBackend("submitPeminjaman", { data: payload }, function(res) {
+                hideLoading();
+                if (res && res.success) {
+                    showMsg("Berhasil", res.message || "Peminjaman berhasil dicatat!");
+                    document.getElementById('formPeminjaman').reset();
+                    compressedPinjamBase64 = null;
+                    document.getElementById('previewPinjamContainer').classList.add('hidden');
+                    document.getElementById('placeholderPinjam').classList.remove('hidden');
+                    setDefaultDate();
+                    muatSemuaPinjaman(true);
+                } else {
+                    showMsg("Gagal", (res && res.message) ? res.message : "Gagal menyimpan data.", true);
+                }
+            }, function(err) {
+                hideLoading();
+                showMsg("Error", err.message, true);
             });
         }
 
@@ -929,7 +961,7 @@
                             <div class="text-[11px] font-mono text-indigo-600 font-semibold mb-1">${item.idTransaksi}</div>
                             <h4 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug mb-2">${item.keterangan}</h4>
                             <div class="text-xs text-slate-600 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <div><span class="font-semibold text-slate-800">Peminjam:</span> ${item.nama || '-'} (${item.noWa || '-'})</div>
+                                <div><span class="font-semibold text-slate-800">Peminjam:</span> ${item.nama || '-'}${item.noWa && item.noWa !== '-' ? ` (${item.noWa})` : ''}</div>
                                 <div><span class="font-semibold text-slate-800">Dept:</span> ${item.departemen || '-'}</div>
                                 <div><span class="font-semibold text-slate-800">Tgl Pinjam:</span> ${item.tglPeminjaman || '-'}</div>
                             </div>
@@ -997,6 +1029,7 @@
         function bukaModalKembali(rowId) {
             document.getElementById('kembali_row_id').value = rowId;
             document.getElementById('k_foto').value = '';
+            compressedKembaliBase64 = null;
             document.getElementById('previewKembaliContainer').classList.add('hidden');
             document.getElementById('placeholderKembali').classList.remove('hidden');
             document.getElementById('kembaliModal').classList.remove('hidden');
@@ -1008,9 +1041,7 @@
 
         function prosesKembalikan() {
             const rowId = document.getElementById('kembali_row_id').value;
-            const fileInput = document.getElementById('k_foto');
-            
-            if(!fileInput.files || !fileInput.files[0]) {
+            if(!compressedKembaliBase64) {
                 showMsg("Perhatian", "Harap ambil atau unggah foto bukti barang yang dikembalikan!", true);
                 return;
             }
@@ -1018,23 +1049,27 @@
             closeKembaliModal();
             showLoading("Memproses pengembalian...");
             
-            compressImage(fileInput.files[0], function(base64Image) {
-                callBackend("submitPengembalian", { rowNumber: rowId, base64Foto: base64Image }, function(res) {
-                    hideLoading();
-                    if(res && res.success) {
-                        if (pinjamanAktifCache) {
-                            pinjamanAktifCache = pinjamanAktifCache.filter(x => x.rowNumber != rowId);
-                            filterPinjamanLokal();
-                        }
-                        showMsg("Sukses", res.message || "Barang berhasil dikembalikan!");
-                        muatSemuaPinjaman(true);
-                    } else {
-                        showMsg("Gagal", (res && res.message) ? res.message : "Gagal memproses pengembalian.", true);
+            const trxId = targetPengembalianItem ? targetPengembalianItem.idTransaksi : "";
+            callBackend("submitPengembalian", { 
+                rowNumber: rowId, 
+                base64Foto: compressedKembaliBase64,
+                idTransaksi: trxId 
+            }, function(res) {
+                hideLoading();
+                if(res && res.success) {
+                    if (pinjamanAktifCache) {
+                        pinjamanAktifCache = pinjamanAktifCache.filter(x => x.rowNumber != rowId);
+                        filterPinjamanLokal();
                     }
-                }, function(err) {
-                    hideLoading();
-                    showMsg("Error", err.message, true);
-                });
+                    showMsg("Sukses", res.message || "Barang berhasil dikembalikan!");
+                    compressedKembaliBase64 = null;
+                    muatSemuaPinjaman(true);
+                } else {
+                    showMsg("Gagal", (res && res.message) ? res.message : "Gagal memproses pengembalian.", true);
+                }
+            }, function(err) {
+                hideLoading();
+                showMsg("Error", err.message, true);
             });
         }
 
