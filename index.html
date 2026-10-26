@@ -170,7 +170,7 @@
 
                 <!-- Live Search Filter (Cepat Tanpa Reload) -->
                 <div class="relative">
-                    <input type="text" id="k_filter_input" oninput="filterPinjamanLokal()" placeholder="Filter cepat: Ketik Nama, NRP, ID Transaksi, atau Nama Barang..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                    <input type="text" id="k_filter_input" oninput="filterPinjamanLokal()" placeholder="Filter cepat: Ketik Nama, No HP, ID Transaksi, atau Nama Barang..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
                     <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
             </div>
@@ -888,6 +888,7 @@
             }
             const filtered = source.filter(item =>
                 (item.nama || "").toLowerCase().includes(keyword) ||
+                (item.noWa || "").toLowerCase().includes(keyword) ||
                 (item.nrp || "").toLowerCase().includes(keyword) ||
                 (item.idTransaksi || "").toLowerCase().includes(keyword) ||
                 (item.keterangan || "").toLowerCase().includes(keyword) ||
@@ -928,7 +929,7 @@
                             <div class="text-[11px] font-mono text-indigo-600 font-semibold mb-1">${item.idTransaksi}</div>
                             <h4 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug mb-2">${item.keterangan}</h4>
                             <div class="text-xs text-slate-600 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <div><span class="font-semibold text-slate-800">Peminjam:</span> ${item.nama || '-'} (${item.nrp || '-'})</div>
+                                <div><span class="font-semibold text-slate-800">Peminjam:</span> ${item.nama || '-'} (${item.noWa || '-'})</div>
                                 <div><span class="font-semibold text-slate-800">Dept:</span> ${item.departemen || '-'}</div>
                                 <div><span class="font-semibold text-slate-800">Tgl Pinjam:</span> ${item.tglPeminjaman || '-'}</div>
                             </div>
