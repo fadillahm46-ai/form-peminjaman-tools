@@ -186,6 +186,46 @@ function formatSafeDate(val, pattern) {
   return String(val);
 }
 
+// Helper pemetaan header kolom secara dinamis dan presisi
+function getHeaderMap(sheet) {
+  var headerRow = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+  var map = {
+    id: 0,
+    timestampPinjam: 1,
+    nama: 2,
+    nrp: 3,
+    noWa: 4,
+    perusahaan: 5,
+    departemen: 6,
+    section: 7,
+    tglPinjam: 8,
+    keterangan: 9,
+    fotoPinjam: 10,
+    status: 11,
+    timestampKembali: 12,
+    fotoKembali: 13
+  };
+
+  for (var h = 0; h < headerRow.length; h++) {
+    var head = String(headerRow[h]).toLowerCase().trim();
+    if (head.indexOf("id transaksi") !== -1 || head === "id") map.id = h;
+    else if (head.indexOf("timestamp peminjaman") !== -1) map.timestampPinjam = h;
+    else if (head.indexOf("nama") !== -1) map.nama = h;
+    else if (head.indexOf("nrp") !== -1) map.nrp = h;
+    else if (head.indexOf("whatsapp") !== -1 || head.indexOf("wa") !== -1 || head.indexOf("no hp") !== -1) map.noWa = h;
+    else if (head.indexOf("perusahaan") !== -1) map.perusahaan = h;
+    else if (head.indexOf("departemen") !== -1 || head.indexOf("dept") !== -1) map.departemen = h;
+    else if (head.indexOf("section") !== -1 || head.indexOf("sec") !== -1) map.section = h;
+    else if (head.indexOf("tanggal peminjaman") !== -1 || head.indexOf("tgl pinjam") !== -1) map.tglPinjam = h;
+    else if (head.indexOf("keterangan") !== -1 || head.indexOf("barang") !== -1) map.keterangan = h;
+    else if (head.indexOf("pinjam") !== -1 && (head.indexOf("foto") !== -1 || head.indexOf("gambar") !== -1)) map.fotoPinjam = h;
+    else if (head.indexOf("status") !== -1) map.status = h;
+    else if ((head.indexOf("kembali") !== -1 || head.indexOf("pengembalian") !== -1) && (head.indexOf("timestamp") !== -1 || head.indexOf("waktu") !== -1 || head.indexOf("tanggal") !== -1 || head.indexOf("tgl") !== -1)) map.timestampKembali = h;
+    else if (head.indexOf("kembali") !== -1 && (head.indexOf("foto") !== -1 || head.indexOf("gambar") !== -1)) map.fotoKembali = h;
+  }
+  return map;
+}
+
 function submitPeminjaman(data) {
   try {
     var sheet = getActiveSheet();
@@ -225,45 +265,25 @@ function getAllPinjamanAktif() {
       return { success: true, data: [] };
     }
     
+    var map = getHeaderMap(sheet);
     var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
-    var headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var results = [];
 
-    // Deteksi letak index kolom secara dinamis
-    var idxStatus = 11;
-    var idxFoto = 10;
-    var idxKeterangan = 9;
-    var idxTglPinjam = 8;
-    var idxDept = 6;
-    var idxWa = 4;
-    var idxNrp = 3;
-
-    for (var h = 0; h < headerRow.length; h++) {
-      var head = String(headerRow[h]).toLowerCase();
-      if (head.indexOf("status") !== -1) idxStatus = h;
-      else if (head.indexOf("pinjam") !== -1 && head.indexOf("foto") !== -1) idxFoto = h;
-      else if (head.indexOf("keterangan") !== -1) idxKeterangan = h;
-      else if (head.indexOf("tanggal peminjaman") !== -1) idxTglPinjam = h;
-      else if (head.indexOf("departemen") !== -1) idxDept = h;
-      else if (head.indexOf("whatsapp") !== -1 || head.indexOf("wa") !== -1) idxWa = h;
-      else if (head.indexOf("nrp") !== -1) idxNrp = h;
-    }
-    
     for (var i = data.length - 1; i >= 0; i--) {
       var row = data[i];
-      var status = (row[idxStatus] || "").trim().toUpperCase();
+      var status = (row[map.status] || "").trim().toUpperCase();
       
       if (status === "DIPINJAM") {
         results.push({
           rowNumber: i + 2,
-          idTransaksi: row[0] || "",
-          nama: row[2] || "",
-          nrp: row[idxNrp] || "",
-          noWa: row[idxWa] || "-",
-          departemen: row[idxDept] || "",
-          tglPeminjaman: row[idxTglPinjam] || "-",
-          keterangan: row[idxKeterangan] || "",
-          fotoUrl: row[idxFoto] || ""
+          idTransaksi: row[map.id] || "",
+          nama: row[map.nama] || "",
+          nrp: row[map.nrp] || "",
+          noWa: (map.noWa >= 0 && row[map.noWa]) ? row[map.noWa] : "-",
+          departemen: row[map.departemen] || "",
+          tglPeminjaman: row[map.tglPinjam] || "-",
+          keterangan: row[map.keterangan] || "",
+          fotoUrl: row[map.fotoPinjam] || ""
         });
       }
     }
@@ -276,13 +296,34 @@ function getAllPinjamanAktif() {
 function submitPengembalian(rowNumber, base64Foto, idTransaksi) {
   try {
     var sheet = getActiveSheet();
-    var r = parseInt(rowNumber, 10);
+    var map = getHeaderMap(sheet);
+    var r = -1;
+
+    // Utamakan pencarian baris berdasarkan ID Transaksi agar akurat 100%
+    if (idTransaksi) {
+      var allIds = sheet.getRange(2, map.id + 1, Math.max(sheet.getLastRow() - 1, 1), 1).getValues();
+      for (var k = 0; k < allIds.length; k++) {
+        if (String(allIds[k][0]).trim() === String(idTransaksi).trim()) {
+          r = k + 2;
+          break;
+        }
+      }
+    }
+    if (r === -1) {
+      r = parseInt(rowNumber, 10);
+    }
+    if (!r || r < 2 || r > sheet.getLastRow()) {
+      return { success: false, message: "Baris transaksi tidak valid!" };
+    }
+
     var timestampStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
     var fileName = (idTransaksi || ("TRX_KEMBALI_" + r)) + "_kembali.jpg";
     var fotoKembaliUrl = saveImageToDrive(base64Foto, fileName);
 
-    // Update kolom 12 (Status), 13 (Timestamp Kembali), dan 14 (Foto Kembali) dalam 1 kali eksekusi atomic
-    sheet.getRange(r, 12, 1, 3).setValues([["DONE", timestampStr, fotoKembaliUrl]]);
+    // Update kolom Status, Timestamp Pengembalian, dan Foto Pengembalian sesuai letak kolom yang benar
+    sheet.getRange(r, map.status + 1).setValue("DONE");
+    sheet.getRange(r, map.timestampKembali + 1).setValue(timestampStr);
+    sheet.getRange(r, map.fotoKembali + 1).setValue(fotoKembaliUrl);
     
     return { success: true, message: "Barang berhasil dikembalikan!" };
   } catch (error) {
@@ -298,31 +339,32 @@ function getHistoriByNRP(keyword) {
       return { success: true, data: [] };
     }
 
+    var map = getHeaderMap(sheet);
     var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
     var results = [];
     var searchKey = String(keyword || "").trim().toLowerCase();
     
     for (var i = data.length - 1; i >= 0; i--) {
       var row = data[i];
-      var idTrx = String(row[0] || "").trim();
-      var nrp = String(row[3] || "").trim();
-      var status = String(row[11] || row[10] || "").trim().toUpperCase();
+      var idTrx = String(row[map.id] || "").trim();
+      var nrp = String(row[map.nrp] || "").trim();
+      var status = String(row[map.status] || "").trim().toUpperCase();
       var isMatch = (nrp.toLowerCase() === searchKey) || (idTrx.toLowerCase().indexOf(searchKey) !== -1);
       
       if (searchKey !== "" && isMatch && status === "DONE") {
         results.push({
           idTransaksi: idTrx,
-          nama: String(row[2] || ""),
+          nama: String(row[map.nama] || ""),
           nrp: nrp,
-          noWa: String(row[4] || "-"),
-          departemen: String(row[6] || row[5] || ""),
-          section: String(row[7] || row[6] || ""),
-          perusahaan: String(row[5] || row[4] || ""),
-          keterangan: String(row[9] || row[8] || ""),
-          tglPinjam: row[8] || row[7] || row[1] || "-",
-          tglKembali: row[12] || row[11] || "-",
-          fotoPinjam: String(row[10] || row[9] || ""),
-          fotoKembali: String(row[13] || row[12] || ""),
+          noWa: (map.noWa >= 0 && row[map.noWa]) ? String(row[map.noWa]) : "-",
+          departemen: String(row[map.departemen] || ""),
+          section: String(row[map.section] || ""),
+          perusahaan: String(row[map.perusahaan] || ""),
+          keterangan: String(row[map.keterangan] || ""),
+          tglPinjam: row[map.tglPinjam] || row[map.timestampPinjam] || "-",
+          tglKembali: row[map.timestampKembali] || "-",
+          fotoPinjam: String(row[map.fotoPinjam] || ""),
+          fotoKembali: String(row[map.fotoKembali] || ""),
           status: status
         });
       }
@@ -345,28 +387,34 @@ function getAllData(password) {
       return { success: true, data: [] };
     }
     
+    var map = getHeaderMap(sheet);
     var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
     var results = [];
     
     for (var i = data.length - 1; i >= 0; i--) {
       var row = data[i];
-      if (!row[0]) continue;
+      if (!row[map.id] && !row[map.nama]) continue;
 
+      var rawStatus = String(row[map.status] || "").trim().toUpperCase();
+      var isDone = (rawStatus === "DONE");
+      var status = isDone ? "DONE" : "DIPINJAM";
+
+      // KUNCI PENTING: Jika barang masih DIPINJAM, foto & tanggal kembali wajib bersih/kosong
       results.push({
-        idTransaksi: row[0] || "",
-        timestampPinjam: row[1] || "",
-        nama: row[2] || "",
-        nrp: row[3] || "",
-        noWa: row[4] || "-",
-        perusahaan: row[5] || row[4] || "",
-        departemen: row[6] || row[5] || "",
-        section: row[7] || row[6] || "",
-        tglPinjam: row[8] || row[7] || "",
-        keterangan: row[9] || row[8] || "",
-        fotoPinjam: row[10] || row[9] || "",
-        status: (row[11] || row[10] || "DIPINJAM").trim().toUpperCase(),
-        tglKembali: row[12] || row[11] || "-",
-        fotoKembali: row[13] || row[12] || ""
+        idTransaksi: row[map.id] || "",
+        timestampPinjam: row[map.timestampPinjam] || "",
+        nama: row[map.nama] || "",
+        nrp: row[map.nrp] || "",
+        noWa: (map.noWa >= 0 && row[map.noWa]) ? row[map.noWa] : "-",
+        perusahaan: row[map.perusahaan] || "",
+        departemen: row[map.departemen] || "",
+        section: row[map.section] || "",
+        tglPinjam: row[map.tglPinjam] || row[map.timestampPinjam] || "-",
+        keterangan: row[map.keterangan] || "",
+        fotoPinjam: row[map.fotoPinjam] || "",
+        status: status,
+        tglKembali: isDone ? (row[map.timestampKembali] || "-") : "-",
+        fotoKembali: isDone ? (row[map.fotoKembali] || "") : ""
       });
     }
     return { success: true, data: results };
