@@ -188,7 +188,10 @@ function formatSafeDate(val, pattern) {
 
 // Helper pemetaan header kolom secara dinamis dan presisi
 function getHeaderMap(sheet) {
-  var headerRow = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+  var lastCol = Math.max(sheet.getLastColumn(), 14);
+  var headerRow = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  
+  // Posisi default standar 14 kolom
   var map = {
     id: 0,
     timestampPinjam: 1,
@@ -206,23 +209,76 @@ function getHeaderMap(sheet) {
     fotoKembali: 13
   };
 
+  var detected = {};
   for (var h = 0; h < headerRow.length; h++) {
-    var head = String(headerRow[h]).toLowerCase().trim();
-    if (head.indexOf("id transaksi") !== -1 || head === "id") map.id = h;
-    else if (head.indexOf("timestamp peminjaman") !== -1) map.timestampPinjam = h;
-    else if (head.indexOf("nama") !== -1) map.nama = h;
-    else if (head.indexOf("nrp") !== -1) map.nrp = h;
-    else if (head.indexOf("whatsapp") !== -1 || head.indexOf("wa") !== -1 || head.indexOf("no hp") !== -1) map.noWa = h;
-    else if (head.indexOf("perusahaan") !== -1) map.perusahaan = h;
-    else if (head.indexOf("departemen") !== -1 || head.indexOf("dept") !== -1) map.departemen = h;
-    else if (head.indexOf("section") !== -1 || head.indexOf("sec") !== -1) map.section = h;
-    else if (head.indexOf("tanggal peminjaman") !== -1 || head.indexOf("tgl pinjam") !== -1) map.tglPinjam = h;
-    else if (head.indexOf("keterangan") !== -1 || head.indexOf("barang") !== -1) map.keterangan = h;
-    else if (head.indexOf("pinjam") !== -1 && (head.indexOf("foto") !== -1 || head.indexOf("gambar") !== -1)) map.fotoPinjam = h;
-    else if (head.indexOf("status") !== -1) map.status = h;
-    else if ((head.indexOf("kembali") !== -1 || head.indexOf("pengembalian") !== -1) && (head.indexOf("timestamp") !== -1 || head.indexOf("waktu") !== -1 || head.indexOf("tanggal") !== -1 || head.indexOf("tgl") !== -1)) map.timestampKembali = h;
-    else if (head.indexOf("kembali") !== -1 && (head.indexOf("foto") !== -1 || head.indexOf("gambar") !== -1)) map.fotoKembali = h;
+    var head = String(headerRow[h] || "").toLowerCase().trim();
+    if (!head) continue;
+
+    // 1. Foto Kembali (Wajib dicek sebelum Foto Pinjam)
+    if ((head.indexOf("foto") !== -1 || head.indexOf("gambar") !== -1) && (head.indexOf("kembali") !== -1 || head.indexOf("pengembalian") !== -1)) {
+      detected.fotoKembali = h;
+    }
+    // 2. Foto Pinjam
+    else if ((head.indexOf("foto") !== -1 || head.indexOf("gambar") !== -1) && (head.indexOf("pinjam") !== -1 || head.indexOf("peminjaman") !== -1)) {
+      detected.fotoPinjam = h;
+    }
+    // 3. Waktu / Tanggal Pengembalian
+    else if ((head.indexOf("kembali") !== -1 || head.indexOf("pengembalian") !== -1) && (head.indexOf("timestamp") !== -1 || head.indexOf("waktu") !== -1 || head.indexOf("tgl") !== -1 || head.indexOf("tanggal") !== -1)) {
+      detected.timestampKembali = h;
+    }
+    // 4. Timestamp Sistem Peminjaman
+    else if (head.indexOf("timestamp") !== -1 && (head.indexOf("pinjam") !== -1 || head.indexOf("peminjaman") !== -1)) {
+      detected.timestampPinjam = h;
+    }
+    // 5. Tanggal Peminjaman (Input Kalender)
+    else if ((head.indexOf("tanggal") !== -1 || head.indexOf("tgl") !== -1) && (head.indexOf("pinjam") !== -1 || head.indexOf("peminjaman") !== -1)) {
+      detected.tglPinjam = h;
+    }
+    // 6. Keterangan / Nama Barang / Tools (Wajib dicek sebelum Nama Lengkap agar tidak tertukar!)
+    else if (head.indexOf("keterangan") !== -1 || head.indexOf("nama barang") !== -1 || head.indexOf("nama tools") !== -1 || head.indexOf("tools") !== -1 || (head.indexOf("barang") !== -1 && head.indexOf("foto") === -1)) {
+      detected.keterangan = h;
+    }
+    // 7. Nama Lengkap Peminjam (Hanya jika bukan kolom barang/tools)
+    else if (head.indexOf("nama") !== -1 && head.indexOf("barang") === -1 && head.indexOf("tool") === -1) {
+      detected.nama = h;
+    }
+    // 8. NRP / ID Karyawan
+    else if (head.indexOf("nrp") !== -1 || head.indexOf("nik") !== -1 || head.indexOf("karyawan") !== -1) {
+      detected.nrp = h;
+    }
+    // 9. No WhatsApp / HP
+    else if (head.indexOf("whatsapp") !== -1 || head.indexOf("wa") !== -1 || head.indexOf("hp") !== -1 || head.indexOf("telepon") !== -1 || head.indexOf("telp") !== -1) {
+      detected.noWa = h;
+    }
+    // 10. Perusahaan
+    else if (head.indexOf("perusahaan") !== -1 || head.indexOf("company") !== -1 || head.indexOf("pt") !== -1) {
+      detected.perusahaan = h;
+    }
+    // 11. Departemen
+    else if (head.indexOf("departemen") !== -1 || head.indexOf("dept") !== -1) {
+      detected.departemen = h;
+    }
+    // 12. Section
+    else if (head.indexOf("section") !== -1 || head.indexOf("sec") !== -1) {
+      detected.section = h;
+    }
+    // 13. Status
+    else if (head.indexOf("status") !== -1) {
+      detected.status = h;
+    }
+    // 14. ID Transaksi
+    else if (head.indexOf("id transaksi") !== -1 || head === "id" || head.indexOf("id trx") !== -1) {
+      detected.id = h;
+    }
   }
+
+  // Terapkan hasil deteksi
+  for (var key in detected) {
+    if (detected[key] !== undefined) {
+      map[key] = detected[key];
+    }
+  }
+
   return map;
 }
 
